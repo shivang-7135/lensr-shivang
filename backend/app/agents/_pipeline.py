@@ -24,7 +24,7 @@ from datetime import UTC, datetime
 
 from langchain_core.messages import HumanMessage, SystemMessage
 
-from ..llm import reasoning_llm, router_llm
+from ..llm import fast_synthesis_llm, reasoning_llm, router_llm
 from ..observability import span
 from ..tools.scraper import fetch_clean
 from ..tools.serper import google_search
@@ -113,8 +113,22 @@ DATE_PREAMBLE = (
 )
 
 
-async def _llm_json(system: str, user: str, *, use_router: bool = False, timeout: float = 30.0) -> dict:
-    llm = router_llm() if use_router else reasoning_llm()
+async def _llm_json(
+    system: str, user: str, *, use_router: bool = False, use_fast_synth: bool = False, timeout: float = 30.0
+) -> dict:
+    """Call an LLM and parse its response as JSON.
+    
+    Args:
+        use_router: Use router_llm (Haiku, 256 tokens) — for classification/planning only
+        use_fast_synth: Use fast_synthesis_llm (Haiku, 1024 tokens) — for fast mode synthesis
+        timeout: Hard timeout in seconds
+    """
+    if use_fast_synth:
+        llm = fast_synthesis_llm()
+    elif use_router:
+        llm = router_llm()
+    else:
+        llm = reasoning_llm()
     system = DATE_PREAMBLE.format(today=_today_str()) + "\n\n" + system
     try:
         msg = await asyncio.wait_for(
@@ -122,7 +136,7 @@ async def _llm_json(system: str, user: str, *, use_router: bool = False, timeout
             timeout=timeout,
         )
     except asyncio.TimeoutError:
-        logger.warning("LLM call timed out after %.1fs (use_router=%s)", timeout, use_router)
+        logger.warning("LLM call timed out after %.1fs (use_router=%s, use_fast_synth=%s)", timeout, use_router, use_fast_synth)
         return {}
     data = _parse_json(_text(msg))
     return data or {}
@@ -417,7 +431,7 @@ async def _synthesize(query: str, kw: dict, evidence: list[dict], cfg: IntentCon
         "Now synthesize a high-quality answer from the evidence above."
     )
 
-    # Fast mode: 12s timeout (should complete in 3-5s with Haiku)
+    # Fast mode: 12s timeout (should complete in 3-5s with Haiku + 1024 tokens)
     # Deep mode: 25s timeout (Sonnet is slower but more thorough)
     synth_timeout = 12.0 if _is_fast else 25.0
 
@@ -428,12 +442,20 @@ async def _synthesize(query: str, kw: dict, evidence: list[dict], cfg: IntentCon
         attributes={
             "intent": cfg.name,
             "evidence.count": len(limited_evidence),
-            "model": "haiku" if use_fast_model else "sonnet",
+            "model": "haiku-fast-synth" if _is_fast else ("haiku" if use_fast_model else "sonnet"),
             "context.chars": len(context),
             "fast_mode": _is_fast,
         },
     ):
-        data = await _llm_json(sys, user, use_router=use_fast_model, timeout=synth_timeout)
+        if _is_fast:
+            # Fast mode: use dedicated fast_synthesis_llm (Haiku + 1024 max_tokens)
+            data = await _llm_json(sys, user, use_fast_synth=True, timeout=synth_timeout)
+        elif use_fast_model:
+            # Simple intents in deep mode: use Haiku but with enough tokens
+            data = await _llm_json(sys, user, use_fast_synth=True, timeout=synth_timeout)
+        else:
+            # Complex intents in deep mode: use Sonnet for full quality
+            data = await _llm_json(sys, user, use_router=False, timeout=synth_timeout)
 
     # Fallback: retry with simpler prompt if structured JSON failed
     if not data or not data.get("tldr"):

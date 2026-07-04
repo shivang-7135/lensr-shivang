@@ -63,6 +63,28 @@ def router_llm() -> ChatBedrockConverse:
     return _router_llm
 
 
+# ─── Fast synthesis model ────────────────────────────────────────────────────
+# Uses the fast Haiku model but with enough tokens for a full synthesis response
+_fast_synth_llm: ChatBedrockConverse | None = None
+
+
+def fast_synthesis_llm() -> ChatBedrockConverse:
+    global _fast_synth_llm
+    if _fast_synth_llm is None:
+        _fast_synth_llm = ChatBedrockConverse(
+            model=settings.bedrock_model_router,  # Haiku — fast
+            region_name=settings.aws_region,
+            temperature=0.3,
+            max_tokens=1024,  # Enough for a concise structured answer
+            config=Config(
+                read_timeout=_REQUEST_TIMEOUT,
+                retries={"max_attempts": _MAX_RETRIES},
+                tcp_keepalive=True,
+            ),
+        )
+    return _fast_synth_llm
+
+
 def vision_llm() -> ChatBedrockConverse:
     global _vision_llm
     if _vision_llm is None:
