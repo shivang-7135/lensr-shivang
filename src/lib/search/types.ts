@@ -271,6 +271,7 @@ export type StreamEvent =
       scene: { scene?: string; mood?: string; objects?: string[]; place_type?: string };
     }
   | { type: "partial_answer"; delta: string }
+  | { type: "partial_structured"; field: string; value?: unknown; delta?: string; index?: number; done?: boolean }
   | {
       type: "final";
       intent: SearchIntent;

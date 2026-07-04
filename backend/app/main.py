@@ -25,7 +25,20 @@ from .router_graph import run_stream
 async def lifespan(_app: FastAPI):
     # Initialise Phoenix tracing once at startup
     setup_tracing()
+
+    # Pre-warm LLM connections to eliminate cold-start latency on first request
+    from .llm import warmup as llm_warmup
+
+    await llm_warmup()
+
     yield
+
+    # Gracefully close persistent connection pools
+    from .tools.scraper import shutdown_scraper
+    from .tools.serper import shutdown_clients
+
+    await shutdown_clients()
+    await shutdown_scraper()
 
 
 app = FastAPI(title="Lensr backend", lifespan=lifespan)

@@ -268,6 +268,100 @@ function MobileActivityFeed({ events, elapsed }: { events: StreamEvent[]; elapse
   );
 }
 
+// ─── Intent-Specific Skeleton ───────────────────────────────────────────────
+// Shows a purpose-built loading skeleton matched to the expected result card.
+// This makes the UI feel faster since the user sees the correct layout immediately.
+function IntentSkeleton({ intent }: { intent: SearchIntent | null }) {
+  if (intent === "shopping" || intent === "comparison") {
+    return (
+      <div className="hidden sm:flex flex-col mt-2 space-y-4 animate-pulse">
+        {/* TL;DR skeleton */}
+        <div className="p-4 rounded-xl border border-border/30 space-y-2">
+          <div className="h-3 w-20 bg-muted dark:bg-[#222] rounded" />
+          <div className="h-4 w-full bg-muted dark:bg-[#222] rounded" />
+          <div className="h-4 w-[85%] bg-muted dark:bg-[#222] rounded" />
+        </div>
+        {/* Product picks skeleton */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="p-3 rounded-lg border border-border/20 space-y-2">
+              <div className="h-4 w-[60%] bg-muted dark:bg-[#222] rounded" />
+              <div className="h-3 w-[40%] bg-muted dark:bg-[#222] rounded" />
+              <div className="h-3 w-full bg-muted dark:bg-[#222] rounded" />
+              <div className="h-3 w-[75%] bg-muted dark:bg-[#222] rounded" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (intent === "trip") {
+    return (
+      <div className="hidden sm:flex flex-col mt-2 space-y-4 animate-pulse">
+        <div className="p-4 rounded-xl border border-border/30 space-y-2">
+          <div className="h-3 w-24 bg-muted dark:bg-[#222] rounded" />
+          <div className="h-4 w-full bg-muted dark:bg-[#222] rounded" />
+        </div>
+        {/* Days skeleton */}
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="p-3 rounded-lg border border-border/20 space-y-2">
+            <div className="h-4 w-20 bg-muted dark:bg-[#222] rounded" />
+            <div className="h-3 w-full bg-muted dark:bg-[#222] rounded" />
+            <div className="h-3 w-[80%] bg-muted dark:bg-[#222] rounded" />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (intent === "recipes") {
+    return (
+      <div className="hidden sm:flex flex-col mt-2 space-y-4 animate-pulse">
+        <div className="p-4 rounded-xl border border-border/30 space-y-2">
+          <div className="h-3 w-16 bg-muted dark:bg-[#222] rounded" />
+          <div className="h-4 w-full bg-muted dark:bg-[#222] rounded" />
+        </div>
+        <div className="p-4 rounded-lg border border-border/20 space-y-3">
+          <div className="h-5 w-[50%] bg-muted dark:bg-[#222] rounded" />
+          <div className="flex gap-4">
+            <div className="h-3 w-16 bg-muted dark:bg-[#222] rounded" />
+            <div className="h-3 w-16 bg-muted dark:bg-[#222] rounded" />
+            <div className="h-3 w-16 bg-muted dark:bg-[#222] rounded" />
+          </div>
+          <div className="space-y-1.5">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="h-3 w-full bg-muted dark:bg-[#222] rounded" />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Default: general knowledge skeleton (tldr + key facts + markdown)
+  return (
+    <div className="hidden sm:flex flex-col mt-2 space-y-4 animate-pulse">
+      {/* TL;DR card skeleton */}
+      <div className="p-4 rounded-xl border border-border/30 space-y-2">
+        <div className="h-3 w-20 bg-muted dark:bg-[#222] rounded" />
+        <div className="h-4 w-full bg-muted dark:bg-[#222] rounded" />
+        <div className="h-4 w-[70%] bg-muted dark:bg-[#222] rounded" />
+      </div>
+      {/* Key facts skeleton */}
+      <div className="p-4 rounded-xl border border-border/20 space-y-2.5">
+        <div className="h-3 w-24 bg-muted dark:bg-[#222] rounded" />
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="flex gap-2 items-start">
+            <div className="h-4 w-4 rounded-full bg-muted dark:bg-[#222] shrink-0" />
+            <div className="h-3 w-full bg-muted dark:bg-[#222] rounded" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // Client-side timeout for the stream (90 seconds)
 const STREAM_TIMEOUT_MS = 90_000;
 
@@ -343,6 +437,25 @@ export function ResultsStream({ query, fastMode = false }: { query: string; fast
         if (ev.type === "partial_answer") {
           // Each partial_answer replaces the previous one (fast preview → real tldr)
           setPartial(ev.delta);
+        }
+        // ⚡ Progressive structured rendering — build up the final result incrementally
+        if (ev.type === "partial_structured") {
+          setFinal((prev) => {
+            const structured = { ...(prev?.structured ?? {}) };
+            if (ev.field === "tldr") {
+              structured.tldr = ev.value;
+            } else if (ev.field === "key_facts") {
+              structured.key_facts = ev.value;
+            } else if (ev.field === "detail_markdown") {
+              // Append delta chunks for streaming markdown
+              structured.detail_markdown = (structured.detail_markdown as string ?? "") + (ev.delta ?? "");
+            }
+            return {
+              structured,
+              markdown: (structured.detail_markdown as string) ?? prev?.markdown ?? "",
+              sources: prev?.sources ?? [],
+            };
+          });
         }
         if (ev.type === "final") {
           setIntent(ev.intent);
@@ -483,11 +596,24 @@ export function ResultsStream({ query, fastMode = false }: { query: string; fast
             </div>
           )}
 
-          {final && intent ? (
+          {done && final && intent ? (
             <div className="space-y-6 sm:space-y-8">
               {renderStructured(intent, final.structured, final.markdown, final.sources)}
               <div className="pt-6 sm:pt-8 border-t border-border dark:border-[#27272a]">
                 <SourcesGrid sources={final.sources} />
+              </div>
+            </div>
+          ) : !done && final && intent ? (
+            /* ⚡ Progressive rendering: show structured content as it streams in */
+            <div className="space-y-6 sm:space-y-8 animate-in fade-in-0 duration-300">
+              {renderStructured(intent, final.structured, final.markdown, final.sources)}
+              {/* Loading indicator at bottom while still streaming */}
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inset-0 rounded-full bg-accent opacity-60 animate-ping" />
+                  <span className="relative rounded-full h-2 w-2 bg-accent" />
+                </span>
+                <span>Building answer…</span>
               </div>
             </div>
           ) : partial ? (
@@ -504,14 +630,8 @@ export function ResultsStream({ query, fastMode = false }: { query: string; fast
               </div>
             </div>
           ) : !error ? (
-            <div className="hidden sm:flex flex-col mt-2 space-y-3">
-              <div className="space-y-2.5">
-                <div className="h-5 w-40 bg-muted dark:bg-[#222] rounded" />
-                <div className="h-3 w-full bg-muted dark:bg-[#222] rounded" />
-                <div className="h-3 w-[90%] bg-muted dark:bg-[#222] rounded" />
-                <div className="h-3 w-[75%] bg-muted dark:bg-[#222] rounded" />
-              </div>
-            </div>
+            /* ⚡ Intent-specific skeleton: shown as soon as intent is detected */
+            <IntentSkeleton intent={intent} />
           ) : null}
 
           {(() => {

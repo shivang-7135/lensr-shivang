@@ -164,6 +164,11 @@ RULES:
 5. If query asks to explain a concept, use "learning"
 6. For restaurants/food places, use "food" (not "places")
 7. For workout/exercise, use "fitness" (not "health")
+
+OUTPUT FORMAT:
+Return JSON with two keys:
+- "intent": the chosen intent string
+- "confidence": a float between 0.0 and 1.0 indicating how sure you are of this classification
 """
 
 DISPATCH = {
@@ -226,11 +231,21 @@ async def _classify(query: str) -> Intent:
         if raw.startswith("```"):
             raw = raw.split("```", 2)[1].lstrip("json").strip().rsplit("```", 1)[0]
         try:
-            intent = json.loads(raw).get("intent")
+            parsed = json.loads(raw)
+            intent = parsed.get("intent")
+            confidence = parsed.get("confidence", 1.0) # Assume high confidence if not provided
         except Exception:
             intent = "general"
+            confidence = 0.0
+            
         if intent not in DISPATCH:
             intent = "general"
+            
+        # Supervisor Logic: If confidence is very low, fallback to general to avoid hallucinated specific schemas
+        if confidence < 0.4 and intent != "general":
+            logger.info(f"Supervisor override: Intent '{intent}' had low confidence ({confidence}). Falling back to 'general'.")
+            intent = "general"
+            
         return intent  # type: ignore[return-value]
 
 
