@@ -97,27 +97,10 @@ Intent = Literal[
 ]
 
 CLASSIFY_SYS = """Classify the user's search query into exactly one intent.
-Return ONLY JSON: {"intent": "<intent>"}
+Return ONLY JSON: {"intent": "<value>"}
 
-INTENTS (choose the most specific one):
-
-SHOPPING & BUYING:
-- shopping: comparing products, 'best X', reviews, buying guidance, product recommendations
-- price_history: price tracking, when to buy, sale windows, price drops, deal timing
-- gift: gift ideas, presents for someone, gift recommendations
-
-TRAVEL & PLACES:
-- trip: travel plans, itineraries, vacation planning, destination ideas, travel tips
-- places: restaurants, bars, cafes, attractions, local venues, "where to go"
-- food: restaurant recommendations, food delivery, cuisine guides, dining options
-- local: local services (plumbers, doctors, lawyers, mechanics, salons)
-- weather: weather forecasts, climate info, "what's the weather", best time to visit
-
-ENTERTAINMENT:
-- movies: films, TV shows, streaming recommendations, "what to watch", actor info
-- books: book recommendations, reading lists, author info, book reviews
-- music: songs, artists, albums, playlists, concerts, music recommendations
-- events: concerts, festivals, shows, local happenings, ticket info
+INTENTS:
+shopping|price_history|gift|trip|places|food|local|weather|movies|books|music|events
 - gaming: video games, game guides, walkthroughs, game recommendations
 
 SOCIAL MEDIA:
@@ -149,26 +132,11 @@ LIFESTYLE:
 - productivity: time management, organization, tools, workflows
 
 COMPARISON & RESEARCH:
-- comparison: X vs Y, comparing options, "which is better"
-- news: current events, breaking news, recent happenings
-- sports: scores, teams, players, sports news, game results
+|gaming|insta|tech|learning|howto|diy|health|fitness|recipes|finance|jobs|legal
+|real_estate|automotive|pets|fashion|parenting|dating|productivity|comparison|news|sports|general
 
-FALLBACK:
-- general: anything that doesn't fit above categories
-
-RULES:
-1. Choose the MOST SPECIFIC intent that matches
-2. If query mentions "vs" or "compare", use "comparison"
-3. If query is about buying/best product, use "shopping"
-4. If query asks "how to" do something physical/practical, use "howto" or "diy"
-5. If query asks to explain a concept, use "learning"
-6. For restaurants/food places, use "food" (not "places")
-7. For workout/exercise, use "fitness" (not "health")
-
-OUTPUT FORMAT:
-Return JSON with two keys:
-- "intent": the chosen intent string
-- "confidence": a float between 0.0 and 1.0 indicating how sure you are of this classification
+RULES: "best X"/buying→shopping, "vs"/compare→comparison, "how to"→howto/diy,
+explain concept→learning, restaurants→food, workout→fitness, default→general
 """
 
 DISPATCH = {
@@ -217,9 +185,9 @@ async def _classify(query: str) -> Intent:
         try:
             msg = await asyncio.wait_for(
                 router_llm().ainvoke([SystemMessage(CLASSIFY_SYS), HumanMessage(query)]),
-                timeout=8.0,
+                timeout=5.0,  # Reduced from 8s — classification should be fast with compact prompt
             )
-        except TimeoutError:
+        except (TimeoutError, asyncio.TimeoutError):
             logger.warning("Intent classification timed out — defaulting to 'general'")
             return "general"  # type: ignore[return-value]
         raw = (
@@ -231,21 +199,13 @@ async def _classify(query: str) -> Intent:
         if raw.startswith("```"):
             raw = raw.split("```", 2)[1].lstrip("json").strip().rsplit("```", 1)[0]
         try:
-            parsed = json.loads(raw)
-            intent = parsed.get("intent")
-            confidence = parsed.get("confidence", 1.0) # Assume high confidence if not provided
+            intent = json.loads(raw).get("intent")
         except Exception:
             intent = "general"
-            confidence = 0.0
-            
+
         if intent not in DISPATCH:
             intent = "general"
-            
-        # Supervisor Logic: If confidence is very low, fallback to general to avoid hallucinated specific schemas
-        if confidence < 0.4 and intent != "general":
-            logger.info(f"Supervisor override: Intent '{intent}' had low confidence ({confidence}). Falling back to 'general'.")
-            intent = "general"
-            
+
         return intent  # type: ignore[return-value]
 
 

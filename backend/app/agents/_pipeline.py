@@ -113,10 +113,17 @@ DATE_PREAMBLE = (
 )
 
 
-async def _llm_json(system: str, user: str, *, use_router: bool = False) -> dict:
+async def _llm_json(system: str, user: str, *, use_router: bool = False, timeout: float = 30.0) -> dict:
     llm = router_llm() if use_router else reasoning_llm()
     system = DATE_PREAMBLE.format(today=_today_str()) + "\n\n" + system
-    msg = await llm.ainvoke([SystemMessage(system), HumanMessage(user)])
+    try:
+        msg = await asyncio.wait_for(
+            llm.ainvoke([SystemMessage(system), HumanMessage(user)]),
+            timeout=timeout,
+        )
+    except asyncio.TimeoutError:
+        logger.warning("LLM call timed out after %.1fs (use_router=%s)", timeout, use_router)
+        return {}
     data = _parse_json(_text(msg))
     return data or {}
 
@@ -363,28 +370,42 @@ async def _synthesize(query: str, kw: dict, evidence: list[dict], cfg: IntentCon
     # In deep mode: use Sonnet for complex intents, Haiku for simple lookups
     use_fast_model = _is_fast or cfg.name in {"weather", "news", "sports", "general"}
 
-    sys = (
-        f"Today is {_today_str()}.\n\n"
-        "You are an expert research analyst producing a high-quality answer for a real user.\n"
-        f"ROLE: {cfg.system_prompt}\n\n"
-        "━━━ QUALITY REQUIREMENTS ━━━\n"
-        "• Be SPECIFIC: use real product names, prices, dates, version numbers from the evidence\n"
-        "• Be HONEST: if evidence is thin, say so — never hallucinate details\n"
-        "• Be ACTIONABLE: every recommendation must have a clear reason why\n"
-        "• Be CURRENT: trust the evidence over your training data for dates/prices/availability\n"
-        "• Cite sources inline as [1], [2] etc. whenever stating a specific fact\n"
-        "• For tldr: write 2-3 punchy sentences that answer the question directly — no filler\n"
-        "• For detail_markdown: use headers (##), bullet points, bold key terms — make it scannable\n\n"
-        "━━━ OUTPUT FORMAT ━━━\n"
-        "Return ONLY valid JSON matching this exact schema (no markdown fences, no extra keys):\n"
-        f"{cfg.schema_hint}\n\n"
-        "VALIDATION RULES:\n"
-        "- tldr must be 2-4 sentences, specific, not generic filler\n"
-        "- All array fields must have at least 2 items if evidence supports it\n"
-        "- detail_markdown must be at least 150 words with proper markdown formatting\n"
-        "- Never return placeholder text like 'string' or 'example'\n"
-        "- If a field cannot be filled from evidence, use null (not empty string)"
-    )
+    if _is_fast:
+        # ⚡ FAST MODE: Simplified schema for speed — fewer output tokens = faster response
+        # Instead of the full complex schema, ask for just the essential fields
+        sys = (
+            f"Today is {_today_str()}.\n\n"
+            "You are a concise research analyst. Answer QUICKLY and SPECIFICALLY.\n"
+            f"ROLE: {cfg.system_prompt}\n\n"
+            "OUTPUT: Return ONLY valid JSON with these fields:\n"
+            '{"tldr": "2-3 sentences directly answering the question with specifics from evidence", '
+            '"key_facts": ["fact 1 with citation [n]", "fact 2 [n]", "fact 3 [n]"], '
+            '"detail_markdown": "## Answer\\n\\nBrief structured answer with bullet points. 80-120 words max."}\n\n'
+            "RULES: Be specific (real names, prices, dates). Cite sources as [n]. Never hallucinate."
+        )
+    else:
+        sys = (
+            f"Today is {_today_str()}.\n\n"
+            "You are an expert research analyst producing a high-quality answer for a real user.\n"
+            f"ROLE: {cfg.system_prompt}\n\n"
+            "━━━ QUALITY REQUIREMENTS ━━━\n"
+            "• Be SPECIFIC: use real product names, prices, dates, version numbers from the evidence\n"
+            "• Be HONEST: if evidence is thin, say so — never hallucinate details\n"
+            "• Be ACTIONABLE: every recommendation must have a clear reason why\n"
+            "• Be CURRENT: trust the evidence over your training data for dates/prices/availability\n"
+            "• Cite sources inline as [1], [2] etc. whenever stating a specific fact\n"
+            "• For tldr: write 2-3 punchy sentences that answer the question directly — no filler\n"
+            "• For detail_markdown: use headers (##), bullet points, bold key terms — make it scannable\n\n"
+            "━━━ OUTPUT FORMAT ━━━\n"
+            "Return ONLY valid JSON matching this exact schema (no markdown fences, no extra keys):\n"
+            f"{cfg.schema_hint}\n\n"
+            "VALIDATION RULES:\n"
+            "- tldr must be 2-4 sentences, specific, not generic filler\n"
+            "- All array fields must have at least 2 items if evidence supports it\n"
+            "- detail_markdown must be at least 150 words with proper markdown formatting\n"
+            "- Never return placeholder text like 'string' or 'example'\n"
+            "- If a field cannot be filled from evidence, use null (not empty string)"
+        )
 
     user = (
         f"User query: {query}\n"
@@ -396,6 +417,10 @@ async def _synthesize(query: str, kw: dict, evidence: list[dict], cfg: IntentCon
         "Now synthesize a high-quality answer from the evidence above."
     )
 
+    # Fast mode: 12s timeout (should complete in 3-5s with Haiku)
+    # Deep mode: 25s timeout (Sonnet is slower but more thorough)
+    synth_timeout = 12.0 if _is_fast else 25.0
+
     with span(
         "llm.synthesize",
         span_kind="CHAIN",
@@ -405,9 +430,10 @@ async def _synthesize(query: str, kw: dict, evidence: list[dict], cfg: IntentCon
             "evidence.count": len(limited_evidence),
             "model": "haiku" if use_fast_model else "sonnet",
             "context.chars": len(context),
+            "fast_mode": _is_fast,
         },
     ):
-        data = await _llm_json(sys, user, use_router=use_fast_model)
+        data = await _llm_json(sys, user, use_router=use_fast_model, timeout=synth_timeout)
 
     # Fallback: retry with simpler prompt if structured JSON failed
     if not data or not data.get("tldr"):
