@@ -5,10 +5,9 @@ primary_region = 'arn'  # Stockholm — close to user; Bedrock calls go to eu-we
   dockerfile = "Dockerfile"
 
 [env]
-  BEDROCK_MODEL_REASONING = "anthropic.claude-3-5-sonnet-20241022-v2:0"
-  BEDROCK_MODEL_ROUTER = "anthropic.claude-3-haiku-20240307-v1:0"
-  BEDROCK_MODEL_VISION = "anthropic.claude-3-5-sonnet-20241022-v2:0"
-  CORS_ALLOW_ORIGIN = "https://lensr.studio"
+  CORS_ALLOW_ORIGIN = "https://lensr.studio,https://www.lensr.studio"
+  # Model IDs are set in config.py defaults or via secrets
+  # BEDROCK_MODEL_REASONING, BEDROCK_MODEL_ROUTER, BEDROCK_MODEL_VISION
 
 [http_service]
   internal_port = 8000

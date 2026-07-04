@@ -243,63 +243,37 @@ async def _fanout_search(queries: list[str]) -> list[dict]:
 async def _scrape(sources: list[dict], limit: int) -> list[dict]:
     """Scrape pages with progressive timeout — process results as they complete.
     
-    Uses asyncio.as_completed() so fast pages are available immediately.
-    Has a hard 8s timeout but returns whatever has completed by then.
+    Uses asyncio.gather with a hard timeout. Returns whatever completed.
     """
     targets = sources[:limit]
+    if not targets:
+        return []
+        
     with span(
         "scrape.pages",
         span_kind="TOOL",
         input_value=json.dumps([s["url"] for s in targets]),
         attributes={"scrape.url_count": len(targets)},
     ):
-        # Create tasks with index tracking
-        tasks = {
-            asyncio.create_task(fetch_clean(s["url"])): i
-            for i, s in enumerate(targets)
-        }
-        
-        enriched = [{**s, "body": ""} for s in targets]  # Pre-fill with empty bodies
-        completed = 0
-        
         try:
-            # Process results as they complete (fast pages first)
-            for coro in asyncio.as_completed(tasks.keys(), timeout=8.0):
-                try:
-                    body = await coro
-                    # Find which task this was
-                    for task, idx in tasks.items():
-                        if task.done() and not task.cancelled():
-                            try:
-                                result = task.result()
-                                if result is body:
-                                    if isinstance(body, str) and body:
-                                        enriched[idx] = {**targets[idx], "body": body[:5000]}
-                                        completed += 1
-                                    break
-                            except Exception:
-                                pass
-                except Exception as e:
-                    logger.debug("Scrape task failed: %s", e)
-                    
+            bodies = await asyncio.wait_for(
+                asyncio.gather(*[fetch_clean(s["url"]) for s in targets], return_exceptions=True),
+                timeout=8.0,
+            )
         except asyncio.TimeoutError:
-            # Some pages timed out — that's fine, we use what we have
-            logger.info("Scrape progressive timeout: %d/%d pages completed", completed, len(targets))
-            # Cancel remaining tasks
-            for task in tasks:
-                if not task.done():
-                    task.cancel()
-        
-        # Collect any results from completed tasks that we missed above
-        for task, idx in tasks.items():
-            if task.done() and not task.cancelled():
-                try:
-                    body = task.result()
-                    if isinstance(body, str) and body and not enriched[idx].get("body"):
-                        enriched[idx] = {**targets[idx], "body": body[:5000]}
-                except Exception:
-                    pass
-        
+            logger.warning("Scrape timed out after 8s — using whatever completed")
+            bodies = [None] * len(targets)
+
+        enriched = []
+        for s, body in zip(targets, bodies, strict=False):
+            if isinstance(body, Exception):
+                logger.debug("Scrape failed for %s: %s", s["url"], type(body).__name__)
+                text = None
+            elif isinstance(body, str):
+                text = body
+            else:
+                text = None
+            enriched.append({**s, "body": (text or "")[:5000]})
         return enriched
 
 
@@ -625,10 +599,16 @@ async def run_pipeline(query: str, cfg: IntentConfig) -> AsyncIterator[dict]:
     seen_urls: set[str] = set()
 
     # Merge generic and seed results into evidence
+    # Note: generic_results come from google_search() with "link" key,
+    # while seed_results come from _fanout_search() normalized to "url" key.
     for r in list(generic_results) + list(seed_results):
-        url = r.get("url")
+        url = r.get("url") or r.get("link")
         if url and url not in seen_urls and len(evidence) < MAX_SOURCES:
-            evidence.append(r)
+            # Normalize to always have "url" key
+            normalized = {**r, "url": url}
+            if "title" not in normalized:
+                normalized["title"] = url
+            evidence.append(normalized)
             seen_urls.add(url)
 
     # ⚡ NEW: Early Fast partial answer!
