@@ -540,10 +540,10 @@ export function ResultsStream({ query, fastMode = false }: { query: string; fast
     <>
       <ResearchAnimation active={!done && !error && !cached} />
 
-      <div className="flex flex-col lg:flex-row gap-8 max-w-6xl mx-auto w-full relative z-10">
+      <div className="flex flex-col lg:flex-row gap-6 max-w-6xl mx-auto w-full relative z-10">
         {/* Left Column: Live Research Sidebar — hidden on mobile during loading to prevent layout shifts */}
-        <div className="hidden lg:block w-full lg:w-[320px] shrink-0 order-last lg:order-first">
-          <div className="sticky top-24">
+        <div className="hidden lg:block w-full lg:w-[280px] shrink-0 order-last lg:order-first">
+          <div className="sticky top-20">
             {cached ? (
               <CacheHitBanner query={query} />
             ) : (
@@ -572,28 +572,30 @@ export function ResultsStream({ query, fastMode = false }: { query: string; fast
 
         {/* Right Column: Main Content */}
         <div className="flex-1 min-w-0 flex flex-col pt-1 overflow-hidden">
-          <div className="mb-3 sm:mb-4 flex items-center gap-2 flex-wrap">
-            {intent && (
-              <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] uppercase tracking-wider px-2 sm:px-3 py-1 sm:py-1.5 rounded-full bg-muted/50 dark:bg-[#1a1a1a] text-muted-foreground font-medium border border-border/40 dark:border-[#2a2a2a]">
-                {INTENT_LABEL[intent]}
-              </span>
-            )}
-            {/* Timer — desktop only for live, both for final */}
-            {!done && !error && !cached && (
-              <span className="hidden sm:inline-flex items-center gap-1 text-[11px] px-2.5 py-1.5 rounded-full bg-muted/50 dark:bg-[#18181b] text-muted-foreground font-mono tabular-nums border border-border/50 dark:border-[#27272a]">
-                <Clock className="h-3 w-3" />
-                {(elapsed / 1000).toFixed(1)}s
-              </span>
-            )}
-            {done && finalElapsed && !cached && (
-              <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-mono tabular-nums">
-                {(finalElapsed / 1000).toFixed(1)}s
-              </span>
-            )}
+          {/* Intent + timer inline with heading */}
+          <div className="mb-4 sm:mb-6">
+            <div className="flex items-center gap-2 mb-2 flex-wrap">
+              {intent && (
+                <span className="inline-flex items-center text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-md bg-secondary text-muted-foreground font-medium">
+                  {INTENT_LABEL[intent]}
+                </span>
+              )}
+              {!done && !error && !cached && (
+                <span className="hidden sm:inline-flex items-center gap-1 text-[10px] text-muted-foreground font-mono tabular-nums">
+                  <Clock className="h-3 w-3" />
+                  {(elapsed / 1000).toFixed(1)}s
+                </span>
+              )}
+              {done && finalElapsed && !cached && (
+                <span className="inline-flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-mono tabular-nums">
+                  {(finalElapsed / 1000).toFixed(1)}s
+                </span>
+              )}
+            </div>
+            <h1 className="font-display text-lg sm:text-2xl tracking-tight font-semibold text-foreground break-words leading-snug">
+              {query}
+            </h1>
           </div>
-          <h1 className="font-sans text-xl sm:text-4xl tracking-tight font-semibold text-foreground dark:text-[#fafafa] mb-4 sm:mb-8 break-words">
-            {query}
-          </h1>
 
           {error && (
             <div className="p-4 glass border border-destructive/50 text-sm text-destructive">

@@ -38,17 +38,14 @@ function ResultsPage() {
   return (
     <div className="min-h-screen flex flex-col overflow-x-hidden">
       <SiteHeader />
-      <main className="flex-1 mx-auto max-w-5xl w-full px-4 sm:px-6 py-6 sm:py-8 overflow-x-hidden">
-        {/* Search bar area */}
-        <div className="mb-6 max-w-2xl">
+      <main className="flex-1 mx-auto max-w-5xl w-full px-4 sm:px-6 py-4 sm:py-6 overflow-x-hidden">
+        {/* Compact search bar on results page */}
+        <div className="mb-4 max-w-2xl">
           <SearchBar initial={q} />
         </div>
 
         {q && (
-          <div className="flex items-center justify-between mb-6">
-            <p className="text-sm text-muted-foreground">
-              Results for <span className="text-foreground font-medium">"{q}"</span>
-            </p>
+          <div className="flex items-center justify-end mb-4">
 
             {/* Fast/Deep toggle */}
             <motion.div

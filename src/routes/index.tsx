@@ -56,7 +56,7 @@ function Home() {
 
           {/* Search */}
           <SlideUp delay={0.6} duration={0.5}>
-            <SearchBar />
+            <SearchBar autoFocus />
           </SlideUp>
 
           {/* Categories */}

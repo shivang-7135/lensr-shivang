@@ -10,11 +10,12 @@ const INTENT_CHIPS = [
   { label: "Insta caption", q: "/insta" },
 ];
 
-export function SearchBar({ initial = "" }: { initial?: string }) {
+export function SearchBar({ initial = "", autoFocus: shouldAutoFocus = false }: { initial?: string; autoFocus?: boolean }) {
   const [q, setQ] = useState(initial);
   const [focused, setFocused] = useState(false);
   const navigate = useNavigate();
   const containerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setQ(initial);
@@ -32,6 +33,8 @@ export function SearchBar({ initial = "" }: { initial?: string }) {
   function submit(e: FormEvent) {
     e.preventDefault();
     if (!q.trim()) return;
+    // Dismiss mobile keyboard immediately on submit
+    inputRef.current?.blur();
     navigate({ to: "/results", search: { q: q.trim() } });
   }
 
@@ -51,7 +54,8 @@ export function SearchBar({ initial = "" }: { initial?: string }) {
         >
           <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground pointer-events-none z-10" />
           <input
-            autoFocus
+            ref={inputRef}
+            autoFocus={shouldAutoFocus}
             value={q}
             onChange={(e) => setQ(e.target.value)}
             onFocus={() => setFocused(true)}

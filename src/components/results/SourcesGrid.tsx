@@ -35,37 +35,36 @@ export function SourcesGrid({ sources }: { sources: Source[] }) {
           const d = domainOf(s.url);
           const isTrusted = /\.(gov|edu|org)$/.test(d);
           return (
-            <li key={i} className="fade-up-enhanced" style={{ animationDelay: `${i * 80}ms` }}>
+            <li key={i}>
               <a
                 href={s.url}
                 target="_blank"
                 rel="noreferrer"
-                className="group flex items-start gap-3 p-3 rounded-lg glass-hover border border-white/8 bg-white/[0.03] hover:bg-white/[0.07] hover:border-accent/30 transition-all"
+                className="group flex items-start gap-3 p-3 rounded-lg border border-border hover:border-accent/40 hover:bg-secondary/50 transition-all"
               >
-                {/* Number badge */}
-                <span className="shrink-0 flex h-5 w-5 items-center justify-center rounded-full gradient-badge text-[10px] font-semibold text-white mt-0.5">
+                {/* Number + Favicon */}
+                <span className="shrink-0 flex h-5 w-5 items-center justify-center rounded-full bg-secondary text-[10px] font-semibold text-muted-foreground mt-0.5">
                   {i + 1}
                 </span>
 
-                {/* Favicon */}
                 <img
                   src={`https://www.google.com/s2/favicons?sz=32&domain=${d}`}
                   alt=""
-                  className="h-4 w-4 rounded mt-0.5 shrink-0 opacity-80"
+                  className="h-4 w-4 rounded mt-0.5 shrink-0"
                   loading="lazy"
                 />
 
                 <div className="min-w-0 flex-1">
-                  <div className="text-sm font-medium leading-snug line-clamp-2 group-hover:text-accent transition-colors pr-4">
+                  <div className="text-sm font-medium leading-snug line-clamp-2 group-hover:text-accent transition-colors">
                     {s.title}
                   </div>
                   <div className="text-[11px] text-muted-foreground truncate mt-0.5 flex items-center gap-1">
                     {d}
-                    {isTrusted && <ShieldCheck className="h-3 w-3 text-emerald-400/70" />}
+                    {isTrusted && <ShieldCheck className="h-3 w-3 text-emerald-500" />}
                   </div>
                 </div>
 
-                <ExternalLink className="h-3.5 w-3.5 text-muted-foreground/40 group-hover:text-accent/60 shrink-0 mt-0.5 transition-colors" />
+                <ExternalLink className="h-3.5 w-3.5 text-muted-foreground/50 group-hover:text-accent shrink-0 mt-0.5 transition-colors" />
               </a>
             </li>
           );
@@ -75,7 +74,7 @@ export function SourcesGrid({ sources }: { sources: Source[] }) {
       {hidden > 0 && (
         <button
           onClick={() => setExpanded((v) => !v)}
-          className="mt-2 w-full flex items-center justify-center gap-1.5 py-2 text-xs text-muted-foreground hover:text-foreground transition rounded-full glass-soft hover:glass"
+          className="mt-3 w-full flex items-center justify-center gap-1.5 py-2 text-xs text-muted-foreground hover:text-foreground transition rounded-lg border border-border hover:border-accent/40"
         >
           <ChevronDown
             className={`h-3.5 w-3.5 transition-transform ${expanded ? "rotate-180" : ""}`}

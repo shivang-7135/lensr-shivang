@@ -123,36 +123,25 @@ export function GeneralResult({
 
       {/* ── TL;DR card ── */}
       {data.tldr && (
-        <div
-          className="p-4 sm:p-5 glass-strong rounded-xl"
-          style={{
-            borderLeft: "3px solid",
-            borderImage: "linear-gradient(to bottom, var(--primary), var(--accent)) 1",
-          }}
-        >
-          <div className="text-xs uppercase tracking-widest text-accent mb-2 flex items-center gap-1.5">
-            <Lightbulb className="h-3.5 w-3.5 text-accent" />
+        <div className="p-4 sm:p-5 rounded-xl bg-accent/5 border border-accent/20">
+          <div className="text-[11px] uppercase tracking-wider text-accent font-medium mb-2 flex items-center gap-1.5">
+            <Lightbulb className="h-3.5 w-3.5" />
             Summary
           </div>
-          <p className="text-sm sm:text-base leading-relaxed text-foreground/90">{data.tldr}</p>
+          <p className="text-sm sm:text-[15px] leading-relaxed text-foreground/90">{data.tldr}</p>
         </div>
       )}
 
-      {/* ── Key Facts — numbered pill list ── */}
+      {/* ── Key Facts — clean list ── */}
       {!!data.key_facts?.length && (
-        <div className="glass rounded-xl p-4 space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">
+        <div className="rounded-xl border border-border p-4 space-y-2">
+          <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-3">
             Key Points
           </p>
-          <ol className="space-y-2 list-none pl-0">
+          <ol className="space-y-3 list-none pl-0">
             {data.key_facts.slice(0, 8).map((f, i) => (
               <li key={i} className="flex gap-3 items-start text-sm leading-relaxed">
-                <span
-                  className="shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white mt-0.5"
-                  style={{
-                    background: SECTION_ACCENTS[i % SECTION_ACCENTS.length],
-                  }}
-                >
+                <span className="shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold bg-secondary text-muted-foreground mt-0.5">
                   {i + 1}
                 </span>
                 <span className="text-foreground/90 flex-1">
@@ -170,14 +159,13 @@ export function GeneralResult({
       {sections.length > 0 && (
         <div className="space-y-3">
           {sections.map((sec, idx) => (
-            <div key={idx} className="glass rounded-xl overflow-hidden">
+            <div key={idx} className="rounded-xl border border-border overflow-hidden">
               {sec.heading && (
-                <div
-                  className="px-4 py-2.5 border-b border-border/20 flex items-center gap-2"
-                  style={{
-                    borderLeft: `3px solid ${SECTION_ACCENTS[idx % SECTION_ACCENTS.length]}`,
-                  }}
-                >
+                <div className="px-4 py-2.5 bg-secondary/50 border-b border-border flex items-center gap-2">
+                  <span
+                    className="w-1.5 h-4 rounded-full"
+                    style={{ background: SECTION_ACCENTS[idx % SECTION_ACCENTS.length] }}
+                  />
                   <span className="text-sm font-semibold text-foreground">{sec.heading}</span>
                 </div>
               )}
@@ -193,7 +181,7 @@ export function GeneralResult({
 
       {/* ── Fallback: no sections could be parsed, dump raw markdown ── */}
       {sections.length === 0 && data.detail_markdown && (
-        <div className="glass rounded-xl p-4">
+        <div className="rounded-xl border border-border p-4">
           <ReactMarkdown remarkPlugins={[remarkGfm]} components={mdCmps}>
             {linkifyCitations(data.detail_markdown, sources)}
           </ReactMarkdown>
@@ -202,16 +190,16 @@ export function GeneralResult({
 
       {/* ── Related links ── */}
       {!!data.related_links?.length && (
-        <div className="flex flex-wrap gap-2 pt-1">
+        <div className="flex flex-wrap gap-2 pt-2">
           {data.related_links.map((l, i) => (
             <a
               key={i}
               href={l.url}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-1 text-xs font-medium px-3 py-1.5 rounded-full glass-soft hover:border-accent/60 hover:text-accent transition-colors"
+              className="inline-flex items-center gap-1 text-xs font-medium px-3 py-1.5 rounded-full border border-border text-muted-foreground hover:text-accent hover:border-accent/40 transition-colors"
             >
-              {l.label} <ExternalLink className="h-3 w-3 opacity-70" />
+              {l.label} <ExternalLink className="h-3 w-3" />
             </a>
           ))}
         </div>
