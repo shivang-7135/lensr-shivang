@@ -6,7 +6,7 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { SearchBar } from "@/components/SearchBar";
 import { ResultsStream } from "@/components/ResultsStream";
 
-const searchSchema = z.object({ q: z.string().catch("") });
+const searchSchema = z.object({ q: z.string().catch(""), image_url: z.string().optional() });
 
 export const Route = createFileRoute("/results")({
   validateSearch: (s) => searchSchema.parse(s),
@@ -32,7 +32,7 @@ export const Route = createFileRoute("/results")({
 });
 
 function ResultsPage() {
-  const { q } = Route.useSearch();
+  const { q, image_url } = Route.useSearch();
   const [fastMode, setFastMode] = useState(true);
 
   return (
@@ -83,7 +83,12 @@ function ResultsPage() {
         )}
 
         {q ? (
-          <ResultsStream key={`${q}-${fastMode}`} query={q} fastMode={fastMode} />
+          <ResultsStream
+            key={`${q}-${fastMode}-${image_url ?? ""}`}
+            query={q}
+            fastMode={fastMode}
+            imageUrl={image_url}
+          />
         ) : (
           <p className="text-muted-foreground">Type a query above to start.</p>
         )}

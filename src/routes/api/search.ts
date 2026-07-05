@@ -45,6 +45,7 @@ export const Route = createFileRoute("/api/search")({
           intent_hint?: string;
           fast_mode?: boolean;
           session_id?: string;
+          image_url?: string;
         };
         const query = (body.query ?? "").trim();
         if (!query) {
@@ -82,6 +83,7 @@ export const Route = createFileRoute("/api/search")({
             intent_hint: body.intent_hint,
             fast_mode: body.fast_mode,
             session_id: body.session_id,
+            ...(body.image_url ? { image_url: body.image_url } : {}),
           }),
         });
         if (!upstream.ok || !upstream.body) {

@@ -212,7 +212,9 @@ async def _classify(query: str) -> Intent:
         return intent  # type: ignore[return-value]
 
 
-async def run_stream(query: str, fast_mode: bool = False, session_id: str | None = None) -> AsyncIterator[dict]:
+async def run_stream(
+    query: str, fast_mode: bool = False, session_id: str | None = None, image_url: str | None = None
+) -> AsyncIterator[dict]:
     fast_mode_var.set(fast_mode)
 
     # Set session ID for Phoenix tracing (groups all traces from one user session)
@@ -271,9 +273,15 @@ async def run_stream(query: str, fast_mode: bool = False, session_id: str | None
         intent = "general"  # type: ignore[assignment]
     yield {"type": "intent_detected", "intent": intent}
 
+    # If image_url is provided, inject it into the query so the insta agent's
+    # URL regex can detect and process it for Claude Vision analysis
+    dispatch_query = query
+    if image_url and intent == "insta":
+        dispatch_query = f"{query} {image_url}"
+
     # Collect the final result for caching
     final_event = None
-    async for evt in DISPATCH[intent](query):
+    async for evt in DISPATCH[intent](dispatch_query):
         if evt.get("type") == "final":
             final_event = evt
         yield evt

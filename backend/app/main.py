@@ -63,6 +63,7 @@ class SearchBody(BaseModel):
     session_id: str | None = Field(
         default=None, max_length=64, description="Client session ID for Phoenix trace grouping"
     )
+    image_url: str | None = Field(default=None, max_length=2048, description="Signed image URL for vision analysis")
 
 
 def _check_secret(provided: str | None) -> None:
@@ -92,7 +93,9 @@ async def search(body: SearchBody, x_backend_secret: str | None = Header(default
 
     async def gen() -> AsyncIterator[bytes]:
         try:
-            async for evt in run_stream(body.query, fast_mode=body.fast_mode or False, session_id=session_id):
+            async for evt in run_stream(
+                body.query, fast_mode=body.fast_mode or False, session_id=session_id, image_url=body.image_url
+            ):
                 yield f"data: {json.dumps(evt)}\n\n".encode()
         except Exception as e:  # noqa: BLE001
             logger.exception("Stream error [%s]: %s", request_id, e)

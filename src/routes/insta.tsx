@@ -83,10 +83,13 @@ function InstaPage() {
         return;
       }
       setUploading(false);
-      // Pass the signed URL so the backend can download + analyze the image with Vision
+      // Pass the image URL as a separate param (avoids URL-encoding issues in query string)
       nav({
         to: "/results",
-        search: { q: `caption + place ideas for this photo ${signed.signedUrl}` },
+        search: {
+          q: "caption + place ideas for my photo",
+          image_url: signed.signedUrl,
+        },
       });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Upload failed");

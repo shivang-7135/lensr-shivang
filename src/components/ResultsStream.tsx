@@ -375,7 +375,15 @@ const STREAM_TIMEOUT_MS = 90_000;
 const SESSION_ID =
   typeof crypto !== "undefined" ? crypto.randomUUID() : Math.random().toString(36).slice(2);
 
-export function ResultsStream({ query, fastMode = false }: { query: string; fastMode?: boolean }) {
+export function ResultsStream({
+  query,
+  fastMode = false,
+  imageUrl,
+}: {
+  query: string;
+  fastMode?: boolean;
+  imageUrl?: string;
+}) {
   const [events, setEvents] = useState<StreamEvent[]>([]);
   const [partial, setPartial] = useState("");
   const [intent, setIntent] = useState<SearchIntent | null>(null);
@@ -502,7 +510,12 @@ export function ResultsStream({ query, fastMode = false }: { query: string; fast
         const resp = await fetch("/api/search", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ query, fast_mode: fastMode, session_id: SESSION_ID }),
+          body: JSON.stringify({
+            query,
+            fast_mode: fastMode,
+            session_id: SESSION_ID,
+            ...(imageUrl ? { image_url: imageUrl } : {}),
+          }),
           signal: ctl.signal,
         });
         if (genRef.current !== gen) return; // stale
