@@ -121,30 +121,43 @@ export function GeneralResult({
         </div>
       )}
 
-      {/* ── TL;DR card ── */}
+      {/* ── TL;DR card — bold & eye-catching ── */}
       {data.tldr && (
-        <div className="p-4 sm:p-5 rounded-xl bg-accent/5 border border-accent/20">
-          <div className="text-[11px] uppercase tracking-wider text-accent font-medium mb-2 flex items-center gap-1.5">
-            <Lightbulb className="h-3.5 w-3.5" />
-            Summary
+        <div className="relative p-5 sm:p-6 rounded-xl bg-gradient-to-br from-accent/10 via-accent/5 to-transparent border border-accent/25 overflow-hidden">
+          {/* Decorative corner glow */}
+          <div className="absolute top-0 right-0 w-24 h-24 bg-accent/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+          <div className="relative">
+            <div className="text-[11px] uppercase tracking-wider text-accent font-semibold mb-3 flex items-center gap-1.5">
+              <Lightbulb className="h-4 w-4" />
+              Summary
+            </div>
+            <p className="text-[15px] sm:text-base leading-relaxed text-foreground font-medium">
+              {data.tldr}
+            </p>
           </div>
-          <p className="text-sm sm:text-[15px] leading-relaxed text-foreground/90">{data.tldr}</p>
         </div>
       )}
 
-      {/* ── Key Facts — clean list ── */}
+      {/* ── Key Facts — visual list with accent indicators ── */}
       {!!data.key_facts?.length && (
-        <div className="rounded-xl border border-border p-4 space-y-2">
-          <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-3">
+        <div className="rounded-xl border border-border p-4 sm:p-5 space-y-2">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-4 flex items-center gap-1.5">
+            <ChevronRight className="h-3 w-3 text-accent" />
             Key Points
           </p>
-          <ol className="space-y-3 list-none pl-0">
+          <ol className="space-y-1 list-none pl-0">
             {data.key_facts.slice(0, 8).map((f, i) => (
-              <li key={i} className="flex gap-3 items-start text-sm leading-relaxed">
-                <span className="shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold bg-secondary text-muted-foreground mt-0.5">
+              <li
+                key={i}
+                className="flex gap-3 items-start text-sm leading-relaxed p-2.5 rounded-lg hover:bg-secondary/50 transition-colors group"
+              >
+                <span
+                  className="shrink-0 w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-bold text-white mt-0.5 shadow-sm"
+                  style={{ background: SECTION_ACCENTS[i % SECTION_ACCENTS.length] }}
+                >
                   {i + 1}
                 </span>
-                <span className="text-foreground/90 flex-1">
+                <span className="text-foreground flex-1">
                   <ReactMarkdown remarkPlugins={[remarkGfm]} components={mdCmps}>
                     {linkifyCitations(f, sources)}
                   </ReactMarkdown>
@@ -159,17 +172,20 @@ export function GeneralResult({
       {sections.length > 0 && (
         <div className="space-y-3">
           {sections.map((sec, idx) => (
-            <div key={idx} className="rounded-xl border border-border overflow-hidden">
+            <div
+              key={idx}
+              className="rounded-xl border border-border overflow-hidden hover:border-border/80 hover:shadow-sm transition-all duration-200"
+            >
               {sec.heading && (
-                <div className="px-4 py-2.5 bg-secondary/50 border-b border-border flex items-center gap-2">
+                <div className="px-4 py-3 bg-secondary/40 border-b border-border flex items-center gap-2.5">
                   <span
-                    className="w-1.5 h-4 rounded-full"
+                    className="w-2 h-5 rounded-full shadow-sm"
                     style={{ background: SECTION_ACCENTS[idx % SECTION_ACCENTS.length] }}
                   />
                   <span className="text-sm font-semibold text-foreground">{sec.heading}</span>
                 </div>
               )}
-              <div className="px-4 py-3">
+              <div className="px-4 py-3.5">
                 <ReactMarkdown remarkPlugins={[remarkGfm]} components={mdCmps}>
                   {linkifyCitations(sec.body.trim(), sources)}
                 </ReactMarkdown>

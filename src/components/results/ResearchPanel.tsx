@@ -59,9 +59,7 @@ export function ResearchPanel({ events, done }: { events: StreamEvent[]; done: b
         ) : (
           <RefreshCw className="h-3.5 w-3.5 text-muted-foreground" />
         )}
-        <h2 className="text-sm font-semibold tracking-tight text-foreground">
-          Live Research
-        </h2>
+        <h2 className="text-sm font-semibold tracking-tight text-foreground">Live Research</h2>
       </div>
 
       <div className="pl-0.5">

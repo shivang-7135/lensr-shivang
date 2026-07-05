@@ -10,7 +10,13 @@ const INTENT_CHIPS = [
   { label: "Insta caption", q: "/insta" },
 ];
 
-export function SearchBar({ initial = "", autoFocus: shouldAutoFocus = false }: { initial?: string; autoFocus?: boolean }) {
+export function SearchBar({
+  initial = "",
+  autoFocus: shouldAutoFocus = false,
+}: {
+  initial?: string;
+  autoFocus?: boolean;
+}) {
   const [q, setQ] = useState(initial);
   const [focused, setFocused] = useState(false);
   const navigate = useNavigate();

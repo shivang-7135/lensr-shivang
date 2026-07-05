@@ -206,7 +206,7 @@ uvicorn app.main:app --reload --port 8000
 | `CORS_ALLOW_ORIGIN`                           | Frontend domain (default: `http://localhost:3000`)      |
 | `DATABASE_URL`                                | Postgres connection (optional, for semantic cache)      |
 | `PHOENIX_API_KEY`                             | Phoenix API key for trace export                        |
-| `PHOENIX_COLLECTOR_ENDPOINT`                  | Phoenix OTLP endpoint                                  |
+| `PHOENIX_COLLECTOR_ENDPOINT`                  | Phoenix OTLP endpoint                                   |
 | `PHOENIX_PROJECT_NAME`                        | Phoenix project name (default: `lensr`)                 |
 | `TRACING_ENABLED`                             | Set `false` to disable tracing                          |
 
@@ -242,12 +242,12 @@ All backend traces are sent to [Arize Phoenix](https://app.phoenix.arize.com) us
 - **Span kinds:** `CHAIN` (pipeline steps), `TOOL` (Serper, scraper), `LLM` (synthesis, classification via LangChain auto-instrumentation).
 - **LangChain instrumentation:** The `openinference-instrumentation-langchain` package auto-instruments all Bedrock LLM calls with prompts, tokens, and latency. Session metadata is propagated via LangChain's `config.metadata.session_id`.
 
-| Env Variable                 | Purpose                            |
-| ---------------------------- | ---------------------------------- |
-| `PHOENIX_API_KEY`            | Phoenix API key                    |
-| `PHOENIX_COLLECTOR_ENDPOINT` | OTLP endpoint (default: Arize cloud) |
+| Env Variable                 | Purpose                                    |
+| ---------------------------- | ------------------------------------------ |
+| `PHOENIX_API_KEY`            | Phoenix API key                            |
+| `PHOENIX_COLLECTOR_ENDPOINT` | OTLP endpoint (default: Arize cloud)       |
 | `PHOENIX_PROJECT_NAME`       | Project name in Phoenix (default: `lensr`) |
-| `TRACING_ENABLED`            | Set `false` to disable             |
+| `TRACING_ENABLED`            | Set `false` to disable                     |
 
 ---
 

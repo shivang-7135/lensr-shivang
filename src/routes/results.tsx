@@ -39,19 +39,15 @@ function ResultsPage() {
     <div className="min-h-screen flex flex-col overflow-x-hidden">
       <SiteHeader />
       <main className="flex-1 mx-auto max-w-5xl w-full px-4 sm:px-6 py-4 sm:py-6 overflow-x-hidden">
-        {/* Compact search bar on results page */}
-        <div className="mb-4 max-w-2xl">
+        {/* Search bar — full width on results page for better visual balance */}
+        <div className="mb-4">
           <SearchBar initial={q} />
         </div>
 
         {q && (
           <div className="flex items-center justify-end mb-4">
-
             {/* Fast/Deep toggle */}
-            <motion.div
-              layout
-              className="flex p-0.5 rounded-lg border border-border bg-secondary"
-            >
+            <motion.div layout className="flex p-0.5 rounded-lg border border-border bg-secondary">
               <button
                 onClick={() => setFastMode(true)}
                 className={`relative text-xs px-3.5 py-1.5 rounded-md font-medium transition-colors ${

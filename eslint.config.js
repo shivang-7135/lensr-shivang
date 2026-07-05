@@ -17,6 +17,8 @@ export default tseslint.config(
       "node_modules",
       "backend/.venv",
       "**/*.gen.ts",
+      // shadcn/ui generated components — they export both components and utilities
+      "src/components/ui/**",
     ],
   },
   {
@@ -44,7 +46,10 @@ export default tseslint.config(
           ],
         },
       ],
-      "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
+      "react-refresh/only-export-components": [
+        "warn",
+        { allowConstantExport: true, checkJS: false },
+      ],
       "@typescript-eslint/no-unused-vars": "off",
     },
   },

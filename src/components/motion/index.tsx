@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 "use client";
 
 import { motion, AnimatePresence, type Variants } from "framer-motion";
@@ -131,13 +132,7 @@ export function StaggerChildren({
   );
 }
 
-export function StaggerItem({
-  children,
-  className,
-}: {
-  children: ReactNode;
-  className?: string;
-}) {
+export function StaggerItem({ children, className }: { children: ReactNode; className?: string }) {
   return (
     <motion.div variants={staggerItem} className={className}>
       {children}

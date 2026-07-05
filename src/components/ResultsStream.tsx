@@ -2,10 +2,16 @@ import { useEffect, useRef, useState } from "react";
 import { Clock, Zap } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import type { StreamEvent, SearchIntent, StructuredResult } from "@/lib/search/types";
+import type {
+  StreamEvent,
+  SearchIntent,
+  StructuredResult,
+  EnrichmentArtifact,
+} from "@/lib/search/types";
 import { ResearchPanel, CacheHitBanner } from "@/components/results/ResearchPanel";
 import { ResearchAnimation } from "@/components/results/ResearchAnimation";
 import { SourcesGrid } from "@/components/results/SourcesGrid";
+import { EnrichmentRenderer } from "@/components/results/EnrichmentRenderer";
 import { GeneralResult } from "@/components/results/GeneralResult";
 import { ShoppingResult } from "@/components/results/ShoppingResult";
 import { TripResult } from "@/components/results/TripResult";
@@ -381,6 +387,7 @@ export function ResultsStream({ query, fastMode = false }: { query: string; fast
   const [done, setDone] = useState(false);
   const [cached, setCached] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [enrichment, setEnrichment] = useState<EnrichmentArtifact | null>(null);
 
   // Elapsed time tracking
   const startTimeRef = useRef(Date.now());
@@ -414,6 +421,7 @@ export function ResultsStream({ query, fastMode = false }: { query: string; fast
     setDone(false);
     setCached(false);
     setError(null);
+    setEnrichment(null);
     startTimeRef.current = Date.now();
     setElapsed(0);
     setFinalElapsed(null);
@@ -471,6 +479,7 @@ export function ResultsStream({ query, fastMode = false }: { query: string; fast
           });
           setDone(true);
         }
+        if (ev.type === "enrichment") setEnrichment(ev.artifact);
         if (ev.type === "error") setError(ev.message ?? "An error occurred");
       } catch {
         // Malformed JSON event — skip silently
@@ -606,6 +615,14 @@ export function ResultsStream({ query, fastMode = false }: { query: string; fast
           {done && final && intent ? (
             <div className="space-y-6 sm:space-y-8">
               {renderStructured(intent, final.structured, final.markdown, final.sources)}
+
+              {/* ⚡ Visual enrichment — appears after answer with smooth animation */}
+              {enrichment && (
+                <div className="pt-2">
+                  <EnrichmentRenderer data={enrichment} />
+                </div>
+              )}
+
               <div className="pt-6 sm:pt-8 border-t border-border dark:border-[#27272a]">
                 <SourcesGrid sources={final.sources} />
               </div>

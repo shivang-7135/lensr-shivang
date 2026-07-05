@@ -287,5 +287,47 @@ export type StreamEvent =
       sources: Source[];
       cached?: boolean;
     }
+  | {
+      type: "enrichment";
+      artifact: EnrichmentArtifact;
+    }
   | { type: "error"; message: string }
   | { type: "heartbeat" };
+
+// --- Visual enrichment artifacts (generated post-answer) ---
+
+export type EnrichmentArtifact =
+  | {
+      type: "chart";
+      chart_type: "bar" | "line" | "pie" | "radar";
+      title?: string;
+      labels: string[];
+      datasets: Array<{ label: string; data: number[]; color: string }>;
+    }
+  | {
+      type: "table";
+      title?: string;
+      headers: string[];
+      rows: string[][];
+    }
+  | {
+      type: "timeline";
+      title?: string;
+      events: Array<{ date: string; event: string; detail?: string }>;
+    }
+  | {
+      type: "comparison";
+      title?: string;
+      dimensions: string[];
+      items: Array<{ name: string; scores: Record<string, number> }>;
+    }
+  | {
+      type: "stat_cards";
+      title?: string;
+      stats: Array<{
+        label: string;
+        value: string;
+        detail?: string;
+        trend?: "up" | "down" | "neutral";
+      }>;
+    };

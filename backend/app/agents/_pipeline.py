@@ -820,3 +820,15 @@ async def run_pipeline(query: str, cfg: IntentConfig) -> AsyncIterator[dict]:
         "markdown": structured.get("detail_markdown") or tldr,
         "sources": sources,
     }
+
+    # ⚡ Post-answer visual enrichment (non-blocking — answer already delivered)
+    # Skip in fast mode for speed priority
+    if not fast_mode:
+        try:
+            from ._enrichment import generate_enrichment
+
+            enrichment = await generate_enrichment(query, cfg.name, structured)
+            if enrichment:
+                yield {"type": "enrichment", "artifact": enrichment}
+        except Exception as e:
+            logger.debug("Enrichment skipped: %s", e)
