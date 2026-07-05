@@ -566,6 +566,10 @@ async def run_pipeline(query: str, cfg: IntentConfig) -> AsyncIterator[dict]:
             "constraints": [],
             "intent_summary": "Fast parallel search — snippet synthesis",
         }
+        yield {
+            "type": "thinking",
+            "message": f"Detected intent: {cfg.name}. Running parallel search for quick results…",
+        }
         yield {"type": "keywords_extracted", "keywords": kw}
         yield {"type": "search_plan", "queries": all_queries}
 
@@ -573,9 +577,17 @@ async def run_pipeline(query: str, cfg: IntentConfig) -> AsyncIterator[dict]:
         for q in all_queries:
             yield {"type": "tool_call", "tool": "google_search", "input": q}
 
-        # Await both searches concurrently (both already running)
-        generic_results = (await generic_search_task) if generic_search_task else []
-        seed_results = await seed_search_task
+        # Await both searches — guard against Serper/network failures
+        try:
+            generic_results = (await generic_search_task) if generic_search_task else []
+        except Exception as e:
+            logger.warning("Generic search failed (fast mode): %s", e)
+            generic_results = []
+        try:
+            seed_results = await seed_search_task
+        except Exception as e:
+            logger.warning("Seed search failed (fast mode): %s", e)
+            seed_results = []
 
         # Merge and deduplicate results
         evidence: list[dict] = []
@@ -595,8 +607,10 @@ async def run_pipeline(query: str, cfg: IntentConfig) -> AsyncIterator[dict]:
         }
 
         # ⚡ NO SCRAPING in fast mode — synthesize directly from snippets
-        # Snippets from Serper already contain 150-200 chars of relevant text each
-        # This saves 2-4 seconds of network I/O
+        yield {
+            "type": "thinking",
+            "message": f"Found {len(evidence)} sources. Synthesizing answer from snippets (skipping full page reads for speed)…",
+        }
         yield {"type": "stage", "stage": "synthesize"}
 
         # Start synthesis immediately with snippet-only evidence
@@ -679,12 +693,24 @@ async def run_pipeline(query: str, cfg: IntentConfig) -> AsyncIterator[dict]:
         kw = {"keywords": [], "entities": [], "constraints": [], "intent_summary": "Fallback to base intent"}
         planned_queries = cfg.seed_queries(query)[:3]
 
+    yield {
+        "type": "thinking",
+        "message": f"Identified key terms: {', '.join((kw.get('keywords', []) + kw.get('entities', []))[:5]) or 'general search'}. Planning diverse queries…",
+    }
     yield {"type": "keywords_extracted", "keywords": kw}
     yield {"type": "search_plan", "queries": planned_queries}
 
-    # Collect seed results (should already be done while LLM was thinking)
-    seed_results = await seed_search_task
-    generic_results = await generic_search_task if generic_search_task else []
+    # Collect seed results — guard against Serper failures
+    try:
+        seed_results = await seed_search_task
+    except Exception as e:
+        logger.warning("Seed search failed: %s", e)
+        seed_results = []
+    try:
+        generic_results = (await generic_search_task) if generic_search_task else []
+    except Exception as e:
+        logger.warning("Generic search failed: %s", e)
+        generic_results = []
 
     evidence: list[dict] = []
     seen_urls: set[str] = set()
@@ -710,6 +736,11 @@ async def run_pipeline(query: str, cfg: IntentConfig) -> AsyncIterator[dict]:
 
     # Start scraping seed results IMMEDIATELY in the background
     seed_unscraped = [e for e in evidence if "body" not in e][:SCRAPE_TOP_N]
+    if seed_unscraped:
+        yield {
+            "type": "thinking",
+            "message": f"Reading full content from top {len(seed_unscraped)} pages for deeper analysis…",
+        }
     seed_scrape_task = asyncio.create_task(_scrape(seed_unscraped, len(seed_unscraped))) if seed_unscraped else None
 
     # Now run the LLM-planned extra queries concurrently with seed scraping
@@ -769,6 +800,11 @@ async def run_pipeline(query: str, cfg: IntentConfig) -> AsyncIterator[dict]:
             query[:50],
             cfg.name,
         )
+        scraped_count = sum(1 for e in evidence if e.get("body"))
+        yield {
+            "type": "thinking",
+            "message": f"Collected {len(evidence)} sources ({scraped_count} with full text). Evidence looks sufficient — skipping reflection.",
+        }
         yield {
             "type": "reflection",
             "loop": 1,
@@ -806,6 +842,10 @@ async def run_pipeline(query: str, cfg: IntentConfig) -> AsyncIterator[dict]:
                             evidence[i] = by_url2[e["url"]]
 
     yield {"type": "stage", "stage": "synthesize"}
+    yield {
+        "type": "thinking",
+        "message": f"Synthesizing final answer from {len(evidence)} sources using {cfg.name} specialist…",
+    }
 
     # Partial answer has been moved to run earlier before scraping
 
@@ -846,12 +886,6 @@ async def run_pipeline(query: str, cfg: IntentConfig) -> AsyncIterator[dict]:
     if ctx:
         ctx.__exit__(None, None, None)
 
-    # ⚡ Fire enrichment as a background task so it runs concurrently with
-    # delivering the final event — this saves ~0.5s compared to running sequentially
-    from ._enrichment import generate_enrichment
-
-    enrichment_task = asyncio.create_task(generate_enrichment(query, cfg.name, structured))
-
     yield {
         "type": "final",
         "intent": cfg.name,
@@ -860,9 +894,11 @@ async def run_pipeline(query: str, cfg: IntentConfig) -> AsyncIterator[dict]:
         "sources": sources,
     }
 
-    # Await the enrichment that was running in parallel
+    # ⚡ Run enrichment after final — sequential is fine since answer already delivered
     try:
-        enrichment = await asyncio.wait_for(enrichment_task, timeout=12.0)
+        from ._enrichment import generate_enrichment
+
+        enrichment = await asyncio.wait_for(generate_enrichment(query, cfg.name, structured), timeout=12.0)
         if enrichment:
             yield {"type": "enrichment", "artifact": enrichment}
     except Exception as e:

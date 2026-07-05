@@ -48,6 +48,7 @@ export function AgentTimeline({ events, done }: { events: StreamEvent[]; done: b
           "scrape_progress",
           "reflection",
           "vision_result",
+          "thinking",
         ].includes(e.type)
       ) {
         currentGroup.subEvents.push(e);
@@ -242,6 +243,19 @@ export function AgentTimeline({ events, done }: { events: StreamEvent[]; done: b
                           {sub.scene.scene}
                         </p>
                       )}
+                    </div>
+                  );
+                }
+
+                /* ── Thinking / live reasoning ── */
+                if (sub.type === "thinking") {
+                  return (
+                    <div
+                      key={subIdx}
+                      className="flex items-start gap-1.5 text-[11px] text-muted-foreground/80 italic font-sans leading-relaxed"
+                    >
+                      <Brain className="h-3 w-3 text-violet-400/60 shrink-0 mt-0.5" />
+                      <span>{sub.message}</span>
                     </div>
                   );
                 }

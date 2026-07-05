@@ -262,6 +262,7 @@ export type StreamEvent =
       };
     }
   | { type: "search_plan"; queries: string[] }
+  | { type: "thinking"; message: string }
   | { type: "tool_call"; tool: string; input: string }
   | { type: "search_results"; loop: number; count: number; sample: Source[] }
   | { type: "scrape_progress"; count: number }
