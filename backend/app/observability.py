@@ -14,6 +14,7 @@ Environment variables (set on Fly.io):
 
 from __future__ import annotations
 
+import contextvars
 import logging
 import os
 from contextlib import contextmanager
@@ -24,8 +25,12 @@ logger = logging.getLogger(__name__)
 _tracer = None
 _tracing_enabled = False
 
+# Context variable to propagate session ID across async boundaries
+session_id_var: contextvars.ContextVar[str | None] = contextvars.ContextVar("session_id", default=None)
+
 # OpenInference semantic convention attribute names
 _OPENINFERENCE_SPAN_KIND = "openinference.span.kind"
+_SESSION_ID = "session.id"
 _INPUT_VALUE = "input.value"
 _INPUT_MIME_TYPE = "input.mime_type"
 _OUTPUT_VALUE = "output.value"
@@ -120,6 +125,11 @@ def span(
         # Set OpenInference span kind so Phoenix shows proper icons/grouping
         s.set_attribute(_OPENINFERENCE_SPAN_KIND, span_kind)
 
+        # Attach session ID from context variable (propagated from request handler)
+        sid = session_id_var.get()
+        if sid:
+            s.set_attribute(_SESSION_ID, sid)
+
         if input_value:
             s.set_attribute(_INPUT_VALUE, input_value[:2000])
             s.set_attribute(_INPUT_MIME_TYPE, "text/plain")
@@ -144,3 +154,15 @@ def span(
 def get_tracer():
     """Return the configured tracer, or None if tracing is disabled."""
     return _tracer if _tracing_enabled else None
+
+
+def get_langchain_session_metadata() -> dict[str, str]:
+    """Return LangChain metadata dict with session_id for auto-instrumented spans.
+
+    Pass this as `metadata` kwarg to LangChain calls so the OpenInference
+    LangChain instrumentor propagates session.id to child spans.
+    """
+    sid = session_id_var.get()
+    if sid:
+        return {"session_id": sid}
+    return {}

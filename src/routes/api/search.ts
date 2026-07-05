@@ -44,6 +44,7 @@ export const Route = createFileRoute("/api/search")({
           query?: string;
           intent_hint?: string;
           fast_mode?: boolean;
+          session_id?: string;
         };
         const query = (body.query ?? "").trim();
         if (!query) {
@@ -76,7 +77,7 @@ export const Route = createFileRoute("/api/search")({
             "Content-Type": "application/json",
             ...(backendSecret ? { "X-Backend-Secret": backendSecret } : {}),
           },
-          body: JSON.stringify({ query, intent_hint: body.intent_hint, fast_mode: body.fast_mode }),
+          body: JSON.stringify({ query, intent_hint: body.intent_hint, fast_mode: body.fast_mode, session_id: body.session_id }),
         });
         if (!upstream.ok || !upstream.body) {
           // Don't leak backend error details to the client

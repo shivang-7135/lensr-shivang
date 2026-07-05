@@ -60,6 +60,7 @@ class SearchBody(BaseModel):
     query: str = Field(..., max_length=MAX_QUERY_LENGTH)
     intent_hint: str | None = Field(default=None, max_length=100)
     fast_mode: bool | None = Field(default=False)
+    session_id: str | None = Field(default=None, max_length=64, description="Client session ID for Phoenix trace grouping")
 
 
 def _check_secret(provided: str | None) -> None:
@@ -84,10 +85,12 @@ async def healthz():
 async def search(body: SearchBody, x_backend_secret: str | None = Header(default=None)):
     _check_secret(x_backend_secret)
     request_id = str(uuid.uuid4())[:8]
+    # Use client-provided session_id or generate one per request
+    session_id = body.session_id or str(uuid.uuid4())
 
     async def gen() -> AsyncIterator[bytes]:
         try:
-            async for evt in run_stream(body.query, fast_mode=body.fast_mode or False):
+            async for evt in run_stream(body.query, fast_mode=body.fast_mode or False, session_id=session_id):
                 yield f"data: {json.dumps(evt)}\n\n".encode()
         except Exception as e:  # noqa: BLE001
             logger.exception("Stream error [%s]: %s", request_id, e)

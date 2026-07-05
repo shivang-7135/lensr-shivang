@@ -365,6 +365,9 @@ function IntentSkeleton({ intent }: { intent: SearchIntent | null }) {
 // Client-side timeout for the stream (90 seconds)
 const STREAM_TIMEOUT_MS = 90_000;
 
+// Stable session ID per browser tab — persists across searches within one session
+const SESSION_ID = typeof crypto !== "undefined" ? crypto.randomUUID() : Math.random().toString(36).slice(2);
+
 export function ResultsStream({ query, fastMode = false }: { query: string; fastMode?: boolean }) {
   const [events, setEvents] = useState<StreamEvent[]>([]);
   const [partial, setPartial] = useState("");
@@ -477,7 +480,7 @@ export function ResultsStream({ query, fastMode = false }: { query: string; fast
         const resp = await fetch("/api/search", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ query, fast_mode: fastMode }),
+          body: JSON.stringify({ query, fast_mode: fastMode, session_id: SESSION_ID }),
           signal: ctl.signal,
         });
         if (genRef.current !== gen) return; // stale

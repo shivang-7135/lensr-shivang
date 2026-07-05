@@ -25,7 +25,7 @@ from datetime import UTC, datetime
 from langchain_core.messages import HumanMessage, SystemMessage
 
 from ..llm import fast_synthesis_llm, reasoning_llm, router_llm
-from ..observability import span
+from ..observability import get_langchain_session_metadata, span
 from ..tools.scraper import fetch_clean
 from ..tools.serper import google_search
 
@@ -130,9 +130,12 @@ async def _llm_json(
     else:
         llm = reasoning_llm()
     system = DATE_PREAMBLE.format(today=_today_str()) + "\n\n" + system
+    # Pass session metadata so Phoenix groups LLM spans by session
+    session_meta = get_langchain_session_metadata()
+    config = {"metadata": session_meta} if session_meta else {}
     try:
         msg = await asyncio.wait_for(
-            llm.ainvoke([SystemMessage(system), HumanMessage(user)]),
+            llm.ainvoke([SystemMessage(system), HumanMessage(user)], config=config),
             timeout=timeout,
         )
     except asyncio.TimeoutError:

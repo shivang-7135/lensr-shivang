@@ -179,12 +179,15 @@ DISPATCH = {
 
 
 async def _classify(query: str) -> Intent:
-    from .observability import span
+    from .observability import get_langchain_session_metadata, span
 
     with span("classify_intent", span_kind="CHAIN", input_value=query, attributes={"model": "haiku"}):
         try:
+            # Pass session metadata so LangChain instrumentor propagates session.id
+            session_meta = get_langchain_session_metadata()
+            config = {"metadata": session_meta} if session_meta else {}
             msg = await asyncio.wait_for(
-                router_llm().ainvoke([SystemMessage(CLASSIFY_SYS), HumanMessage(query)]),
+                router_llm().ainvoke([SystemMessage(CLASSIFY_SYS), HumanMessage(query)], config=config),
                 timeout=5.0,  # Reduced from 8s — classification should be fast with compact prompt
             )
         except (TimeoutError, asyncio.TimeoutError):
@@ -209,8 +212,14 @@ async def _classify(query: str) -> Intent:
         return intent  # type: ignore[return-value]
 
 
-async def run_stream(query: str, fast_mode: bool = False) -> AsyncIterator[dict]:
+async def run_stream(query: str, fast_mode: bool = False, session_id: str | None = None) -> AsyncIterator[dict]:
     fast_mode_var.set(fast_mode)
+
+    # Set session ID for Phoenix tracing (groups all traces from one user session)
+    from .observability import session_id_var
+
+    if session_id:
+        session_id_var.set(session_id)
 
     # ⚡ Emit a stage event IMMEDIATELY so the UI timeline activates right away.
     # Without this the frontend sits on "Planning research…" for the full LLM
