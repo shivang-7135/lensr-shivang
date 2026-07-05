@@ -83,8 +83,11 @@ function InstaPage() {
         return;
       }
       setUploading(false);
-      // Pass storage path reference instead of full signed URL in query string
-      nav({ to: "/results", search: { q: `caption + place ideas for image: ${path}` } });
+      // Pass the signed URL so the backend can download + analyze the image with Vision
+      nav({
+        to: "/results",
+        search: { q: `caption + place ideas for this photo ${signed.signedUrl}` },
+      });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Upload failed");
       setUploading(false);

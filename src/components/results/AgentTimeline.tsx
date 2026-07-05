@@ -252,9 +252,9 @@ export function AgentTimeline({ events, done }: { events: StreamEvent[]; done: b
                   return (
                     <div
                       key={subIdx}
-                      className="flex items-start gap-1.5 text-[11px] text-muted-foreground/80 italic font-sans leading-relaxed"
+                      className="flex items-start gap-2 text-[11px] text-foreground/60 italic font-sans leading-relaxed bg-violet-500/5 dark:bg-violet-500/10 rounded-md px-2.5 py-1.5 border border-violet-200/30 dark:border-violet-500/20"
                     >
-                      <Brain className="h-3 w-3 text-violet-400/60 shrink-0 mt-0.5" />
+                      <Brain className="h-3.5 w-3.5 text-violet-500 dark:text-violet-400 shrink-0 mt-0.5" />
                       <span>{sub.message}</span>
                     </div>
                   );
