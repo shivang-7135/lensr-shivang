@@ -8,6 +8,7 @@ import {
   Scripts,
 } from "@tanstack/react-router";
 import { type ReactNode } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 
 import appCss from "../styles.css?url";
 import { ThemeProvider, themeBootstrapScript } from "@/components/ThemeProvider";
@@ -99,7 +100,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       {
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&display=swap",
+        href: "https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap",
       },
       {
         rel: "stylesheet",
@@ -120,46 +121,7 @@ function RootShell({ children }: { children: ReactNode }) {
         <script dangerouslySetInnerHTML={{ __html: themeBootstrapScript }} />
         <HeadContent />
       </head>
-      <body>
-        {/* Apple-style liquid glass aurora stage — sits behind every route */}
-        <div className="aurora-stage" aria-hidden>
-          <div
-            className="aurora-blob"
-            style={{
-              top: "-15%",
-              left: "-10%",
-              width: "60vw",
-              height: "60vw",
-              background: "var(--aurora-blob-1)",
-            }}
-          />
-          <div
-            className="aurora-blob"
-            style={{
-              bottom: "-20%",
-              right: "-10%",
-              width: "55vw",
-              height: "55vw",
-              background: "var(--aurora-blob-2)",
-              animationDelay: "-12s",
-              animationDuration: "44s",
-            }}
-          />
-          <div
-            className="aurora-blob"
-            style={{
-              top: "30%",
-              left: "40%",
-              width: "40vw",
-              height: "40vw",
-              background: "var(--aurora-blob-3)",
-              animationDelay: "-22s",
-              animationDuration: "52s",
-            }}
-          />
-        </div>
-        <div className="aurora-shimmer" aria-hidden />
-        <div className="aurora-noise" aria-hidden />
+      <body className="antialiased">
         {children}
         <Scripts />
       </body>
@@ -173,8 +135,13 @@ function RootComponent() {
   return (
     <ThemeProvider>
       <QueryClientProvider client={queryClient}>
-        {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-        <Outlet />
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3 }}
+        >
+          <Outlet />
+        </motion.div>
       </QueryClientProvider>
     </ThemeProvider>
   );

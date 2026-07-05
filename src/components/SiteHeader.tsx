@@ -1,11 +1,23 @@
 import { Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { motion, useMotionValueEvent, useScroll } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { ThemeToggle } from "./ThemeToggle";
 
 export function SiteHeader() {
   const [email, setEmail] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [hidden, setHidden] = useState(false);
+  const { scrollY } = useScroll();
+
+  useMotionValueEvent(scrollY, "change", (latest) => {
+    const previous = scrollY.getPrevious() ?? 0;
+    if (latest > 100 && latest > previous) {
+      setHidden(true);
+    } else {
+      setHidden(false);
+    }
+  });
 
   useEffect(() => {
     const sync = async (userId: string | undefined) => {
@@ -33,56 +45,59 @@ export function SiteHeader() {
   }, []);
 
   return (
-    <header className="sticky top-0 z-40 glass-soft">
-      <div className="mx-auto max-w-6xl px-6 h-16 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-2 group">
-          <span className="h-8 w-8 rounded-xl glass flex items-center justify-center font-display text-lg font-bold text-accent">
+    <motion.header
+      animate={{ y: hidden ? "-100%" : "0%" }}
+      transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+      className="sticky top-0 z-40 bg-background/80 backdrop-blur-sm border-b border-border/50"
+    >
+      <div className="mx-auto max-w-6xl px-6 h-14 flex items-center justify-between">
+        <Link to="/" className="flex items-center gap-2.5 group">
+          <span className="h-7 w-7 rounded-lg bg-accent flex items-center justify-center font-display text-sm font-bold text-accent-foreground">
             L
           </span>
-          <span className="font-display text-xl tracking-tight">Lensr</span>
-          <span className="text-xs text-muted-foreground hidden sm:inline">
-            — search that thinks
-          </span>
+          <span className="font-display text-lg tracking-tight font-medium">Lensr</span>
         </Link>
-        <nav className="flex items-center gap-1 sm:gap-2 text-sm">
+
+        <nav className="flex items-center gap-1 text-sm">
           <Link
             to="/insta"
-            className="px-3 py-1.5 rounded-full hover:bg-foreground/10 transition-colors"
+            className="px-3 py-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
           >
             Insta
           </Link>
           <Link
             to="/saved"
-            className="px-3 py-1.5 rounded-full hover:bg-foreground/10 transition-colors"
+            className="px-3 py-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
           >
             Saved
           </Link>
           {isAdmin && (
             <Link
               to="/admin"
-              className="px-3 py-1.5 rounded-full hover:bg-foreground/10 transition-colors text-accent"
+              className="px-3 py-1.5 rounded-lg text-accent hover:bg-secondary transition-colors"
             >
               Admin
             </Link>
           )}
+          <div className="w-px h-5 bg-border mx-1" />
           <ThemeToggle />
           {email ? (
             <button
               onClick={() => supabase.auth.signOut()}
-              className="px-3 py-1.5 rounded-full hover:bg-foreground/10 transition-colors text-muted-foreground"
+              className="px-3 py-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
             >
               Sign out
             </button>
           ) : (
             <Link
               to="/auth"
-              className="px-4 py-1.5 rounded-full glass-strong text-foreground hover:border-accent/50 transition"
+              className="px-3.5 py-1.5 rounded-lg bg-accent text-accent-foreground font-medium hover:opacity-90 transition-opacity text-sm"
             >
               Sign in
             </Link>
           )}
         </nav>
       </div>
-    </header>
+    </motion.header>
   );
 }

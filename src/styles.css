@@ -5,8 +5,8 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Lensr — Liquid Glass design system.
- * Apple-inspired translucent surfaces. Dual-theme (light pearl + dark aurora).
+ * Lensr — Claude.ai-inspired design system.
+ * Clean, minimal, warm surfaces. Dual-theme (light cream + dark charcoal).
  * Tokens in oklch. Theme switched by adding/removing `.dark` on <html>.
  */
 
@@ -57,141 +57,105 @@
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
 }
 
-/* ============ LIGHT MODE (Eteia Light) ============ */
+/* ============ LIGHT MODE — Claude-inspired warm minimal ============ */
 :root {
-  --radius: 1rem;
+  --radius: 0.75rem;
 
-  --background: #F9F7F3;
-  --foreground: #0d0c0b;
+  --background: #FAFAF9;
+  --foreground: #1A1A1A;
 
   --card: #FFFFFF;
-  --card-foreground: #0d0c0b;
+  --card-foreground: #1A1A1A;
 
-  --popover: #F9F7F3;
-  --popover-foreground: #0d0c0b;
+  --popover: #FFFFFF;
+  --popover-foreground: #1A1A1A;
 
-  --primary: #B59E7A;
-  --primary-foreground: #0d0c0b;
+  --primary: #D97706;
+  --primary-foreground: #FFFFFF;
 
-  --secondary: #EBE6DF;
-  --secondary-foreground: #0d0c0b;
+  --secondary: #F5F5F4;
+  --secondary-foreground: #1A1A1A;
 
-  --muted: #EBE6DF;
-  --muted-foreground: #8C847B;
+  --muted: #F5F5F4;
+  --muted-foreground: #737373;
 
-  --accent: #A3C6D9;
-  --accent-foreground: #0d0c0b;
+  --accent: #D97706;
+  --accent-foreground: #FFFFFF;
 
-  --signal: #D9A3B3;
-  --signal-foreground: #0d0c0b;
+  --signal: #059669;
+  --signal-foreground: #FFFFFF;
 
-  --destructive: #ef4444;
-  --destructive-foreground: #ffffff;
+  --destructive: #DC2626;
+  --destructive-foreground: #FFFFFF;
 
-  --border: rgba(13, 12, 11, 0.15);
-  --input: rgba(13, 12, 11, 0.15);
-  --ring: #B59E7A;
+  --border: #E7E5E4;
+  --input: #E7E5E4;
+  --ring: #D97706;
 
-  --chart-1: #D9A3B3;
-  --chart-2: #A3C6D9;
-  --chart-3: #B59E7A;
-  --chart-4: #8C847B;
-  --chart-5: #EBE6DF;
+  --chart-1: #D97706;
+  --chart-2: #059669;
+  --chart-3: #7C3AED;
+  --chart-4: #0EA5E9;
+  --chart-5: #F43F5E;
 
   --sidebar: #FFFFFF;
-  --sidebar-foreground: #0d0c0b;
-  --sidebar-primary: #B59E7A;
-  --sidebar-primary-foreground: #0d0c0b;
-  --sidebar-accent: #EBE6DF;
-  --sidebar-accent-foreground: #0d0c0b;
-  --sidebar-border: rgba(13, 12, 11, 0.15);
-  --sidebar-ring: #B59E7A;
-
-  /* Glassmorphism updates for light atmosphere */
-  --glass-tint: rgba(255, 255, 255, 0.6);
-  --glass-tint-strong: rgba(255, 255, 255, 0.8);
-  --glass-tint-soft: rgba(255, 255, 255, 0.45);
-  --glass-border: rgba(0, 0, 0, 0.05);
-  --glass-rim: rgba(255, 255, 255, 0.9);
-  --glass-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.05);
-
-  --gradient-aurora:
-    radial-gradient(ellipse 80% 60% at 15% 20%, rgba(181, 158, 122, 0.15), transparent 60%),
-    radial-gradient(ellipse 70% 50% at 85% 80%, rgba(163, 198, 217, 0.15), transparent 60%),
-    radial-gradient(ellipse 60% 60% at 60% 30%, rgba(217, 163, 179, 0.15), transparent 65%);
-  --aurora-base: #F9F7F3;
-  --aurora-blob-1: radial-gradient(circle, rgba(181, 158, 122, 0.2), transparent 70%);
-  --aurora-blob-2: radial-gradient(circle, rgba(163, 198, 217, 0.15), transparent 70%);
-  --aurora-blob-3: radial-gradient(circle, rgba(217, 163, 179, 0.15), transparent 70%);
-  --aurora-noise-opacity: 0.02;
+  --sidebar-foreground: #1A1A1A;
+  --sidebar-primary: #D97706;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #F5F5F4;
+  --sidebar-accent-foreground: #1A1A1A;
+  --sidebar-border: #E7E5E4;
+  --sidebar-ring: #D97706;
 }
 
 
-/* ============ DARK MODE (Eteia Dark) ============ */
+/* ============ DARK MODE — Deep charcoal ============ */
 .dark {
-  --background: #0d0c0b;
-  --foreground: #F1ECE4;
+  --background: #1C1C1C;
+  --foreground: #FAFAF9;
 
-  --card: #161413;
-  --card-foreground: #F1ECE4;
+  --card: #262626;
+  --card-foreground: #FAFAF9;
 
-  --popover: #0d0c0b;
-  --popover-foreground: #F1ECE4;
+  --popover: #262626;
+  --popover-foreground: #FAFAF9;
 
-  --primary: #D9C3A3;
-  --primary-foreground: #0d0c0b;
+  --primary: #F59E0B;
+  --primary-foreground: #1C1C1C;
 
-  --secondary: #262422;
-  --secondary-foreground: #F1ECE4;
+  --secondary: #2E2E2E;
+  --secondary-foreground: #FAFAF9;
 
-  --muted: #262422;
-  --muted-foreground: rgba(241, 236, 228, 0.5);
+  --muted: #2E2E2E;
+  --muted-foreground: #A3A3A3;
 
-  --accent: #A3C6D9;
-  --accent-foreground: #0d0c0b;
+  --accent: #F59E0B;
+  --accent-foreground: #1C1C1C;
 
-  --signal: #D9A3B3;
-  --signal-foreground: #0d0c0b;
+  --signal: #34D399;
+  --signal-foreground: #1C1C1C;
 
-  --destructive: #ef4444;
-  --destructive-foreground: #F1ECE4;
+  --destructive: #EF4444;
+  --destructive-foreground: #FAFAF9;
 
-  --border: rgba(241, 236, 228, 0.15);
-  --input: rgba(241, 236, 228, 0.15);
-  --ring: #D9C3A3;
+  --border: #3D3D3D;
+  --input: #3D3D3D;
+  --ring: #F59E0B;
 
-  --chart-1: #D9C3A3;
-  --chart-2: #A3C6D9;
-  --chart-3: #D9A3B3;
-  --chart-4: rgba(241, 236, 228, 0.5);
-  --chart-5: #262422;
+  --chart-1: #F59E0B;
+  --chart-2: #34D399;
+  --chart-3: #A78BFA;
+  --chart-4: #38BDF8;
+  --chart-5: #FB7185;
 
-  --sidebar: #0d0c0b;
-  --sidebar-foreground: #F1ECE4;
-  --sidebar-primary: #D9C3A3;
-  --sidebar-primary-foreground: #0d0c0b;
-  --sidebar-accent: #262422;
-  --sidebar-accent-foreground: #F1ECE4;
-  --sidebar-border: rgba(241, 236, 228, 0.15);
-  --sidebar-ring: #D9C3A3;
-
-  /* Glassmorphism updates for dark atmosphere */
-  --glass-tint: rgba(255, 255, 255, 0.03);
-  --glass-tint-strong: rgba(241, 236, 228, 0.06);
-  --glass-tint-soft: rgba(255, 255, 255, 0.01);
-  --glass-border: rgba(241, 236, 228, 0.08);
-  --glass-rim: rgba(241, 236, 228, 0.15);
-  --glass-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.6);
-
-  --gradient-aurora:
-    radial-gradient(ellipse 80% 60% at 15% 20%, rgba(217, 195, 163, 0.12), transparent 60%),
-    radial-gradient(ellipse 70% 50% at 85% 80%, rgba(163, 198, 217, 0.12), transparent 60%),
-    radial-gradient(ellipse 60% 60% at 60% 30%, rgba(217, 163, 179, 0.12), transparent 65%);
-  --aurora-base: #0d0c0b;
-  --aurora-blob-1: radial-gradient(circle, rgba(217, 195, 163, 0.15), transparent 70%);
-  --aurora-blob-2: radial-gradient(circle, rgba(163, 198, 217, 0.15), transparent 70%);
-  --aurora-blob-3: radial-gradient(circle, rgba(217, 163, 179, 0.12), transparent 70%);
-  --aurora-noise-opacity: 0.03;
+  --sidebar: #1C1C1C;
+  --sidebar-foreground: #FAFAF9;
+  --sidebar-primary: #F59E0B;
+  --sidebar-primary-foreground: #1C1C1C;
+  --sidebar-accent: #2E2E2E;
+  --sidebar-accent-foreground: #FAFAF9;
+  --sidebar-border: #3D3D3D;
+  --sidebar-ring: #F59E0B;
 }
 
 @layer base {
@@ -205,6 +169,7 @@
     font-family: var(--font-sans);
     font-feature-settings: "ss01", "cv11";
     -webkit-font-smoothing: antialiased;
+    line-height: 1.6;
   }
   h1,
   h2,
@@ -212,6 +177,7 @@
   .display {
     font-family: var(--font-display);
     letter-spacing: -0.025em;
+    line-height: 1.1;
   }
   select,
   option {
@@ -220,187 +186,159 @@
   }
 }
 
-/* ============ Aurora stage (fixed behind everything) ============ */
-
-@utility aurora-stage {
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background: var(--gradient-aurora), var(--aurora-base);
-  overflow: hidden;
-}
-
-@utility aurora-blob {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(90px);
-  opacity: 0.55;
-  mix-blend-mode: screen;
-  animation: aurora-drift 32s ease-in-out infinite;
-}
-
-@utility aurora-shimmer {
-  position: fixed;
-  inset: -20%;
-  z-index: -1;
-  pointer-events: none;
-  opacity: 0.18;
-  background: conic-gradient(
-    from 0deg,
-    transparent 0deg,
-    var(--accent) 60deg,
-    transparent 120deg,
-    var(--signal) 200deg,
-    transparent 280deg,
-    transparent 360deg
-  );
-  filter: blur(120px);
-  animation: aurora-rotate 60s linear infinite;
-  mix-blend-mode: screen;
-}
-
-@utility aurora-noise {
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  opacity: var(--aurora-noise-opacity);
-  background-image: url("data:image/svg+xml;utf8,<svg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='1.8' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
-}
-
-@keyframes aurora-drift {
-  0%,
-  100% {
-    transform: translate(0, 0) scale(1);
-  }
-  33% {
-    transform: translate(6%, -4%) scale(1.1);
-  }
-  66% {
-    transform: translate(-4%, 5%) scale(0.95);
-  }
-}
-
-@keyframes aurora-rotate {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .aurora-blob,
-  .aurora-shimmer {
-    animation: none !important;
-  }
-}
+/* ============ Minimal Animation Utilities ============ */
 
 @keyframes fade-up {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 @utility fade-up {
   animation: fade-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
-/* ============ Glass primitives ============ */
+@keyframes fade-up-enhanced {
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@utility fade-up-enhanced {
+  animation: fade-up-enhanced 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* ============ Clean Card System (replaces glass) ============ */
 
 @utility glass {
-  position: relative;
-  background: linear-gradient(180deg, oklch(1 0 0 / 12%), oklch(1 0 0 / 0%) 60%), var(--glass-tint);
-  backdrop-filter: blur(24px) saturate(160%);
-  border: 1px solid var(--glass-border);
+  background: var(--card);
+  border: 1px solid var(--border);
   border-radius: var(--radius);
-  box-shadow:
-    inset 0 1px 0 var(--glass-rim),
-    inset 0 0 0 1px oklch(1 0 0 / 3%),
-    var(--glass-shadow);
-  transition:
-    transform 200ms cubic-bezier(0.2, 0.8, 0.2, 1),
-    border-color 200ms ease,
-    box-shadow 200ms ease;
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.04), 0 1px 2px -1px rgb(0 0 0 / 0.04);
+  transition: all 200ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 @utility glass-strong {
-  position: relative;
-  background:
-    linear-gradient(180deg, oklch(1 0 0 / 18%), oklch(1 0 0 / 2%) 60%), var(--glass-tint-strong);
-  backdrop-filter: blur(30px) saturate(170%);
-  border: 1px solid var(--glass-border);
+  background: var(--card);
+  border: 1px solid var(--border);
   border-radius: var(--radius);
-  box-shadow:
-    inset 0 1px 0 var(--glass-rim),
-    inset 0 0 0 1px oklch(1 0 0 / 4%),
-    var(--glass-shadow);
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
 }
 
 @utility glass-soft {
-  position: relative;
-  background:
-    linear-gradient(180deg, oklch(1 0 0 / 6%), oklch(1 0 0 / 0%) 70%), var(--glass-tint-soft);
-  backdrop-filter: blur(20px) saturate(150%);
-  border: 1px solid var(--glass-border);
-  box-shadow: inset 0 1px 0 var(--glass-rim);
+  background: color-mix(in oklch, var(--background) 80%, transparent);
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(8px);
 }
 
 @utility glass-hover {
-  transition:
-    transform 200ms cubic-bezier(0.2, 0.8, 0.2, 1),
-    border-color 200ms ease,
-    box-shadow 200ms ease;
   &:hover {
-    transform: translateY(-2px);
-    border-color: color-mix(in oklab, var(--accent) 35%, transparent);
-    box-shadow:
-      inset 0 1px 0 var(--glass-rim),
-      0 30px 70px -20px oklch(0.05 0.05 270 / 35%),
-      0 0 0 1px color-mix(in oklab, var(--accent) 25%, transparent);
+    transform: translateY(-1px);
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.06), 0 4px 6px -4px rgb(0 0 0 / 0.06);
+    border-color: var(--accent);
   }
 }
 
 @utility glass-input {
-  background: var(--glass-tint-soft);
-  backdrop-filter: blur(20px) saturate(150%);
-  border: 1px solid var(--glass-border);
-  box-shadow:
-    inset 0 1px 0 var(--glass-rim),
-    inset 0 2px 8px oklch(0 0 0 / 8%);
-  transition:
-    border-color 200ms ease,
-    box-shadow 200ms ease;
+  background: var(--card);
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.03);
+  transition: all 200ms ease;
   &:focus {
     outline: none;
-    border-color: color-mix(in oklab, var(--accent) 60%, transparent);
-    box-shadow:
-      inset 0 1px 0 var(--glass-rim),
-      0 0 0 4px color-mix(in oklab, var(--accent) 18%, transparent),
-      0 0 32px color-mix(in oklab, var(--accent) 25%, transparent);
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in oklch, var(--accent) 15%, transparent);
   }
 }
 
-.grid-overlay {
-  background-image:
-    linear-gradient(to right, oklch(0 0 0 / 5%) 1px, transparent 1px),
-    linear-gradient(to bottom, oklch(0 0 0 / 5%) 1px, transparent 1px);
-  background-size: 56px 56px;
-}
-.dark .grid-overlay {
-  background-image:
-    linear-gradient(to right, oklch(1 0 0 / 4%) 1px, transparent 1px),
-    linear-gradient(to bottom, oklch(1 0 0 / 4%) 1px, transparent 1px);
+/* ============ Gradient utilities ============ */
+
+@utility gradient-text {
+  @apply bg-clip-text text-transparent;
+  background-image: linear-gradient(135deg, var(--primary), var(--accent));
 }
 
-/* ============ Research Animation — Color Splash ============ */
+@utility gradient-progress-bar {
+  height: 2px;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, var(--accent), var(--signal));
+  animation: gradient-flow 2s linear infinite;
+  background-size: 200% 100%;
+}
+
+@keyframes gradient-flow {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+
+@utility gradient-badge {
+  @apply flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-bold text-white;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  box-shadow: 0 0 12px var(--primary);
+  flex-shrink: 0;
+}
+
+@utility glass-metric {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.625rem;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  border-radius: 9999px;
+  background: var(--secondary);
+  border: 1px solid var(--border);
+}
+
+/* ============ Typing / Loading ============ */
+
+@utility typing-cursor {
+  &::after {
+    content: "\25CE";
+    display: inline;
+    color: var(--accent);
+    animation: cursor-blink 0.8s ease-in-out infinite;
+    margin-left: 1px;
+  }
+}
+
+@keyframes cursor-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* Thinking dots animation (Claude-style) */
+@keyframes thinking-bounce {
+  0%, 80%, 100% { transform: scale(0); opacity: 0.4; }
+  40% { transform: scale(1); opacity: 1; }
+}
+
+.thinking-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--muted-foreground);
+  animation: thinking-bounce 1.4s infinite ease-in-out both;
+}
+.thinking-dot:nth-child(1) { animation-delay: -0.32s; }
+.thinking-dot:nth-child(2) { animation-delay: -0.16s; }
+.thinking-dot:nth-child(3) { animation-delay: 0s; }
+
+/* ============ Timeline line ============ */
+@utility timeline-line {
+  position: relative;
+  &::before {
+    content: "";
+    position: absolute;
+    left: 0.5rem;
+    top: 1.5rem;
+    bottom: 0;
+    width: 2px;
+    border-radius: 1px;
+    background: linear-gradient(to bottom, var(--border), transparent);
+  }
+}
+
+/* ============ Research animation (simplified) ============ */
 
 .research-animation-container {
   position: fixed;
@@ -419,329 +357,88 @@
 .research-blob {
   position: absolute;
   border-radius: 50%;
-  filter: blur(70px);
-  opacity: 0.65;
-  mix-blend-mode: multiply;
+  filter: blur(80px);
+  opacity: 0.15;
   transform: translate(-50%, -50%);
-  animation: research-float ease-in-out infinite;
+  animation: research-float 8s ease-in-out infinite;
 }
 
 .dark .research-blob {
-  opacity: 0.75;
-  mix-blend-mode: screen;
+  opacity: 0.1;
 }
 
 .research-pulse {
-  position: absolute;
-  top: 40%;
-  left: 50%;
-  width: 500px;
-  height: 500px;
-  transform: translate(-50%, -50%);
-  border-radius: 50%;
-  background: radial-gradient(circle, oklch(0.6 0.25 248 / 45%), transparent 70%);
-  filter: blur(50px);
-  animation: research-breathe 2.5s ease-in-out infinite;
-}
-
-.dark .research-pulse {
-  background: radial-gradient(circle, oklch(0.65 0.25 248 / 55%), transparent 70%);
+  display: none;
 }
 
 .research-shimmer {
-  position: absolute;
-  inset: -50%;
-  background: conic-gradient(
-    from 0deg,
-    transparent 0deg,
-    oklch(0.6 0.25 270 / 25%) 60deg,
-    transparent 120deg,
-    oklch(0.65 0.22 200 / 20%) 200deg,
-    transparent 280deg,
-    oklch(0.6 0.25 320 / 18%) 340deg,
-    transparent 360deg
-  );
-  filter: blur(80px);
-  animation: research-spin 8s linear infinite;
-  mix-blend-mode: multiply;
-}
-
-.dark .research-shimmer {
-  mix-blend-mode: screen;
-  background: conic-gradient(
-    from 0deg,
-    transparent 0deg,
-    oklch(0.65 0.25 270 / 30%) 60deg,
-    transparent 120deg,
-    oklch(0.7 0.22 200 / 25%) 200deg,
-    transparent 280deg,
-    oklch(0.65 0.25 320 / 22%) 340deg,
-    transparent 360deg
-  );
+  display: none;
 }
 
 @keyframes research-float {
-  0%,
-  100% {
-    transform: translate(-50%, -50%) scale(1) translateY(0);
-  }
-  25% {
-    transform: translate(-50%, -50%) scale(1.2) translateY(-25px) translateX(20px);
-  }
-  50% {
-    transform: translate(-50%, -50%) scale(0.9) translateY(15px) translateX(-15px);
-  }
-  75% {
-    transform: translate(-50%, -50%) scale(1.15) translateY(-20px) translateX(-25px);
-  }
+  0%, 100% { transform: translate(-50%, -50%) scale(1); }
+  50% { transform: translate(-50%, -50%) scale(1.15) translateY(-10px); }
 }
 
-@keyframes research-breathe {
-  0%,
-  100% {
-    transform: translate(-50%, -50%) scale(1);
-    opacity: 0.4;
-  }
-  50% {
-    transform: translate(-50%, -50%) scale(1.4);
-    opacity: 0.7;
-  }
-}
-
-@keyframes research-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@keyframes shimmer {
-  0% {
-    transform: translateX(-100%);
-  }
-  100% {
-    transform: translateX(100%);
-  }
-}
-
-/* Respect reduced motion preference */
-@media (prefers-reduced-motion: reduce) {
-  .research-blob,
-  .research-pulse,
-  .research-shimmer {
-    animation: none !important;
-  }
-  .research-animation-container {
-    opacity: 0.3;
-  }
-}
-
-/* ============ Enhanced UI utilities ============ */
-
-@utility gradient-text {
-  @apply bg-clip-text text-transparent;
-  background-image: linear-gradient(to right, var(--primary), var(--accent));
-}
-
-@utility gradient-progress-bar {
-  height: 3px;
-  border-radius: 9999px;
-  background: linear-gradient(
-    90deg,
-    var(--primary),
-    var(--accent),
-    var(--signal),
-    var(--primary)
-  );
-  background-size: 300% 100%;
-  animation: gradient-flow 2s linear infinite;
-}
-
-@keyframes gradient-flow {
-  0% {
-    background-position: 0% 50%;
-  }
-  100% {
-    background-position: 300% 50%;
-  }
-}
-
-@utility gradient-badge {
-  @apply flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-bold text-white;
-  background: linear-gradient(135deg, var(--primary), var(--accent));
-  box-shadow: 0 0 12px var(--primary);
-  flex-shrink: 0;
-}
-
-/* Glass metric — compact stat badge */
-@utility glass-metric {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-  padding: 0.25rem 0.625rem;
-  font-size: 0.6875rem;
-  font-weight: 500;
-  border-radius: 9999px;
-  background: var(--glass-tint-soft);
-  backdrop-filter: blur(12px);
-  border: 1px solid var(--glass-border);
-}
-
-/* Timeline vertical connecting line */
-@utility timeline-line {
-  position: relative;
-  &::before {
-    content: "";
-    position: absolute;
-    left: 0.5rem;
-    top: 1.5rem;
-    bottom: 0;
-    width: 2px;
-    border-radius: 1px;
-    background: linear-gradient(
-      to bottom,
-      oklch(0.6 0.22 270 / 40%),
-      oklch(0.65 0.22 300 / 20%),
-      transparent
-    );
-  }
-}
-
-/* Typing cursor — blinking bar for partial text */
-@utility typing-cursor {
-  &::after {
-    content: "▎";
-    display: inline;
-    color: var(--accent);
-    animation: cursor-blink 0.8s ease-in-out infinite;
-    margin-left: 1px;
-  }
-}
-
-@keyframes cursor-blink {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0;
-  }
-}
-
-/* Pulse glow — accent-colored breathing glow */
-@keyframes pulse-glow {
-  0%,
-  100% {
-    box-shadow: 0 0 8px oklch(0.6 0.22 270 / 30%);
-  }
-  50% {
-    box-shadow:
-      0 0 20px oklch(0.6 0.22 270 / 60%),
-      0 0 40px oklch(0.65 0.22 300 / 30%);
-  }
-}
-
-@utility pulse-glow {
-  animation: pulse-glow 2s ease-in-out infinite;
-}
-
-/* Gradient border — animated border for glass cards */
-@utility gradient-border {
-  position: relative;
-  border: 1px solid transparent;
-  background-clip: padding-box;
-  &::before {
-    content: "";
-    position: absolute;
-    inset: -1px;
-    border-radius: inherit;
-    padding: 1px;
-    background: linear-gradient(
-      135deg,
-      oklch(0.6 0.22 270 / 50%),
-      oklch(0.65 0.22 300 / 30%),
-      oklch(0.7 0.2 340 / 50%)
-    );
-    mask:
-      linear-gradient(#fff 0 0) content-box,
-      linear-gradient(#fff 0 0);
-    mask-composite: exclude;
-    pointer-events: none;
-  }
-}
-
-/* Enhanced fade-up with more polish */
-@keyframes fade-up-enhanced {
-  from {
-    opacity: 0;
-    transform: translateY(12px) scale(0.98);
-    filter: blur(2px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-    filter: blur(0);
-  }
-}
-
-@utility fade-up-enhanced {
-  animation: fade-up-enhanced 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-
-/* Glass skeleton — shimmer loading placeholder */
-@keyframes glass-shimmer {
-  0% {
-    background-position: -200% 0;
-  }
-  100% {
-    background-position: 200% 0;
-  }
-}
-
-@utility glass-skeleton {
-  background: linear-gradient(
-    90deg,
-    var(--glass-tint-soft) 0%,
-    oklch(1 0 0 / 12%) 50%,
-    var(--glass-tint-soft) 100%
-  );
-  background-size: 200% 100%;
-  animation: glass-shimmer 1.5s ease-in-out infinite;
-  border-radius: var(--radius);
-  border: 1px solid var(--glass-border);
-}
-
-/* ─── Mobile breathing dot (used in MobileActivityFeed) ─────────────────── */
+/* ============ Mobile breathing dot ============ */
 @keyframes mobile-breathe {
-  0%,
-  100% {
-    transform: scale(1);
-    opacity: 0.6;
-  }
-  50% {
-    transform: scale(1.6);
-    opacity: 0.15;
-  }
+  0%, 100% { transform: scale(1); opacity: 0.6; }
+  50% { transform: scale(1.6); opacity: 0.15; }
 }
 
 .mobile-breathe {
   animation: mobile-breathe 1.8s ease-in-out infinite;
 }
 
-/* ============ Mobile: clean, minimal, no distractions ============ */
+/* ============ Reduced motion ============ */
+@media (prefers-reduced-motion: reduce) {
+  .research-blob,
+  .thinking-dot {
+    animation: none !important;
+  }
+}
+
+/* ============ Spotlight effect for search ============ */
+.spotlight {
+  position: relative;
+  overflow: hidden;
+}
+.spotlight::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  background: radial-gradient(
+    600px circle at var(--spotlight-x, 50%) var(--spotlight-y, 50%),
+    color-mix(in oklch, var(--accent) 12%, transparent),
+    transparent 40%
+  );
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.spotlight:hover::before,
+.spotlight:focus-within::before {
+  opacity: 1;
+}
+
+/* ============ Glass skeleton ============ */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@utility glass-skeleton {
+  background: linear-gradient(90deg, var(--secondary) 0%, var(--muted) 50%, var(--secondary) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-radius: var(--radius);
+}
+
+/* ============ Mobile optimizations ============ */
 @media (max-width: 1023px) {
-  /* Kill all background animations */
   .research-animation-container {
     display: none !important;
-  }
-
-  /* Disable all entrance animations — content just appears */
-  .animate-in {
-    animation: none !important;
-    opacity: 1 !important;
-    transform: none !important;
   }
 
   .fade-up,
@@ -751,35 +448,7 @@
     transform: none !important;
   }
 
-  /* No pulsing animations on skeleton loaders (keep mobile-breathe alive) */
-  .animate-pulse {
-    animation: none !important;
-    opacity: 0.5;
-  }
-
-  /* Keep mobile breathing dot alive — it's the only intentional animation */
   .mobile-breathe {
     animation: mobile-breathe 1.8s ease-in-out infinite !important;
-  }
-
-  /* No shimmer or gradient animations */
-  .glass-skeleton {
-    animation: none !important;
-    background: var(--glass-tint-soft) !important;
-  }
-
-  .gradient-progress-bar {
-    animation: none !important;
-  }
-
-  /* Kill typing cursor on mobile */
-  .typing-cursor::after {
-    display: none !important;
-  }
-
-  /* Disable ping animations */
-  .animate-ping {
-    animation: none !important;
-    opacity: 0 !important;
   }
 }

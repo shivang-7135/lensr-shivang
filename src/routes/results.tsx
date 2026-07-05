@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { z } from "zod";
+import { motion } from "framer-motion";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SearchBar } from "@/components/SearchBar";
 import { ResultsStream } from "@/components/ResultsStream";
@@ -37,31 +38,54 @@ function ResultsPage() {
   return (
     <div className="min-h-screen flex flex-col overflow-x-hidden">
       <SiteHeader />
-      <main className="flex-1 mx-auto max-w-6xl w-full px-4 sm:px-6 py-6 sm:py-10 overflow-x-hidden">
-        <div className="mb-4 sm:mb-6">
+      <main className="flex-1 mx-auto max-w-5xl w-full px-4 sm:px-6 py-6 sm:py-8 overflow-x-hidden">
+        {/* Search bar area */}
+        <div className="mb-6 max-w-2xl">
           <SearchBar initial={q} />
         </div>
 
         {q && (
-          <div className="flex items-center justify-end gap-2 mb-4 sm:mb-6">
-            <div className="flex bg-muted/40 dark:bg-[#18181b]/60 p-0.5 sm:p-1 rounded-full border border-border/30 dark:border-white/5">
+          <div className="flex items-center justify-between mb-6">
+            <p className="text-sm text-muted-foreground">
+              Results for <span className="text-foreground font-medium">"{q}"</span>
+            </p>
+
+            {/* Fast/Deep toggle */}
+            <motion.div
+              layout
+              className="flex p-0.5 rounded-lg border border-border bg-secondary"
+            >
               <button
                 onClick={() => setFastMode(true)}
-                className={`text-[10px] sm:text-xs px-2.5 sm:px-4 py-1 sm:py-1.5 rounded-full font-medium transition-colors ${
-                  fastMode ? "bg-foreground text-background shadow-sm" : "text-muted-foreground"
+                className={`relative text-xs px-3.5 py-1.5 rounded-md font-medium transition-colors ${
+                  fastMode ? "text-foreground" : "text-muted-foreground"
                 }`}
               >
-                Fast
+                {fastMode && (
+                  <motion.div
+                    layoutId="mode-indicator"
+                    className="absolute inset-0 bg-card rounded-md shadow-sm border border-border"
+                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                  />
+                )}
+                <span className="relative z-10">Fast</span>
               </button>
               <button
                 onClick={() => setFastMode(false)}
-                className={`text-[10px] sm:text-xs px-2.5 sm:px-4 py-1 sm:py-1.5 rounded-full font-medium transition-colors ${
-                  !fastMode ? "bg-foreground text-background shadow-sm" : "text-muted-foreground"
+                className={`relative text-xs px-3.5 py-1.5 rounded-md font-medium transition-colors ${
+                  !fastMode ? "text-foreground" : "text-muted-foreground"
                 }`}
               >
-                Deep
+                {!fastMode && (
+                  <motion.div
+                    layoutId="mode-indicator"
+                    className="absolute inset-0 bg-card rounded-md shadow-sm border border-border"
+                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                  />
+                )}
+                <span className="relative z-10">Deep</span>
               </button>
-            </div>
+            </motion.div>
           </div>
         )}
 
