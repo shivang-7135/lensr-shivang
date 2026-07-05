@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Clock, Zap } from "lucide-react";
+import { Clock, Zap, BarChart3 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type {
@@ -388,6 +388,8 @@ export function ResultsStream({ query, fastMode = false }: { query: string; fast
   const [cached, setCached] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [enrichment, setEnrichment] = useState<EnrichmentArtifact | null>(null);
+  // true = answer done but enrichment not yet received; false = enrichment arrived or stream closed
+  const [enrichmentPending, setEnrichmentPending] = useState(false);
 
   // Elapsed time tracking
   const startTimeRef = useRef(Date.now());
@@ -422,6 +424,7 @@ export function ResultsStream({ query, fastMode = false }: { query: string; fast
     setCached(false);
     setError(null);
     setEnrichment(null);
+    setEnrichmentPending(false);
     startTimeRef.current = Date.now();
     setElapsed(0);
     setFinalElapsed(null);
@@ -478,9 +481,17 @@ export function ResultsStream({ query, fastMode = false }: { query: string; fast
             sources: ev.sources ?? [],
           });
           setDone(true);
+          // Show enrichment skeleton until the enrichment event (or stream close) arrives
+          setEnrichmentPending(true);
         }
-        if (ev.type === "enrichment") setEnrichment(ev.artifact);
-        if (ev.type === "error") setError(ev.message ?? "An error occurred");
+        if (ev.type === "enrichment") {
+          setEnrichment(ev.artifact);
+          setEnrichmentPending(false);
+        }
+        if (ev.type === "error") {
+          setEnrichmentPending(false);
+          setError(ev.message ?? "An error occurred");
+        }
       } catch {
         // Malformed JSON event — skip silently
       }
@@ -536,6 +547,8 @@ export function ResultsStream({ query, fastMode = false }: { query: string; fast
         }
       } finally {
         clearTimeout(timeout);
+        // Stream fully closed — if enrichment never arrived, clear the pending state
+        if (genRef.current === gen) setEnrichmentPending(false);
       }
     })();
 
@@ -616,7 +629,32 @@ export function ResultsStream({ query, fastMode = false }: { query: string; fast
             <div className="space-y-6 sm:space-y-8">
               {renderStructured(intent, final.structured, final.markdown, final.sources)}
 
-              {/* ⚡ Visual enrichment — appears after answer with smooth animation */}
+              {/* ⚡ Enrichment area: skeleton while generating, real chart when ready */}
+              {enrichmentPending && !enrichment && (
+                <div className="rounded-xl border border-border overflow-hidden animate-pulse">
+                  <div className="px-4 py-3 bg-secondary/40 border-b border-border flex items-center gap-2">
+                    <BarChart3 className="h-4 w-4 text-muted-foreground/40" />
+                    <span className="text-sm font-medium text-muted-foreground/50">
+                      Generating visual…
+                    </span>
+                    <div className="ml-auto flex gap-1">
+                      <span className="thinking-dot" />
+                      <span className="thinking-dot" />
+                      <span className="thinking-dot" />
+                    </div>
+                  </div>
+                  <div className="p-4 space-y-3">
+                    <div className="h-3 w-1/3 bg-muted rounded" />
+                    <div className="h-32 w-full bg-muted/60 rounded-lg" />
+                    <div className="flex gap-2">
+                      <div className="h-2 w-16 bg-muted rounded" />
+                      <div className="h-2 w-20 bg-muted rounded" />
+                      <div className="h-2 w-12 bg-muted rounded" />
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {enrichment && (
                 <div className="pt-2">
                   <EnrichmentRenderer data={enrichment} />

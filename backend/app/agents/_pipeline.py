@@ -604,8 +604,33 @@ async def run_pipeline(query: str, cfg: IntentConfig) -> AsyncIterator[dict]:
         sources = [{"title": e["title"], "url": e["url"]} for e in evidence]
 
         tldr = structured.get("tldr") or ""
+
+        # ⚡ Stream structured fields section-by-section so frontend renders
+        # progressively instead of waiting for the complete final payload
         if tldr:
+            yield {"type": "partial_structured", "field": "tldr", "value": tldr}
             yield {"type": "partial_answer", "delta": tldr + "\n\n"}
+
+        key_facts = structured.get("key_facts") or structured.get("key_points") or []
+        if key_facts:
+            yield {"type": "partial_structured", "field": "key_facts", "value": key_facts}
+
+        detail_md = structured.get("detail_markdown") or ""
+        if detail_md:
+            sections = detail_md.split("\n## ")
+            for i, section in enumerate(sections):
+                chunk = ("## " + section) if i > 0 else section
+                yield {
+                    "type": "partial_structured",
+                    "field": "detail_markdown",
+                    "delta": chunk,
+                    "done": i == len(sections) - 1,
+                }
+
+        # ⚡ Fire enrichment as a background task — runs while final event is delivered
+        from ._enrichment import generate_enrichment
+
+        enrichment_task = asyncio.create_task(generate_enrichment(query, cfg.name, structured))
 
         if pipeline_span:
             pipeline_span.set_attribute("evidence.final_count", len(evidence))
@@ -623,6 +648,14 @@ async def run_pipeline(query: str, cfg: IntentConfig) -> AsyncIterator[dict]:
             "markdown": structured.get("detail_markdown") or tldr,
             "sources": sources,
         }
+
+        # Enrichment arrives ~1-2s after the answer — pops in with animation
+        try:
+            enrichment = await asyncio.wait_for(enrichment_task, timeout=12.0)
+            if enrichment:
+                yield {"type": "enrichment", "artifact": enrichment}
+        except Exception as e:
+            logger.debug("Enrichment skipped (fast mode): %s", e)
         return
 
     # Retrieve generic background search if available
@@ -813,6 +846,12 @@ async def run_pipeline(query: str, cfg: IntentConfig) -> AsyncIterator[dict]:
     if ctx:
         ctx.__exit__(None, None, None)
 
+    # ⚡ Fire enrichment as a background task so it runs concurrently with
+    # delivering the final event — this saves ~0.5s compared to running sequentially
+    from ._enrichment import generate_enrichment
+
+    enrichment_task = asyncio.create_task(generate_enrichment(query, cfg.name, structured))
+
     yield {
         "type": "final",
         "intent": cfg.name,
@@ -821,14 +860,10 @@ async def run_pipeline(query: str, cfg: IntentConfig) -> AsyncIterator[dict]:
         "sources": sources,
     }
 
-    # ⚡ Post-answer visual enrichment (non-blocking — answer already delivered)
-    # Skip in fast mode for speed priority
-    if not fast_mode:
-        try:
-            from ._enrichment import generate_enrichment
-
-            enrichment = await generate_enrichment(query, cfg.name, structured)
-            if enrichment:
-                yield {"type": "enrichment", "artifact": enrichment}
-        except Exception as e:
-            logger.debug("Enrichment skipped: %s", e)
+    # Await the enrichment that was running in parallel
+    try:
+        enrichment = await asyncio.wait_for(enrichment_task, timeout=12.0)
+        if enrichment:
+            yield {"type": "enrichment", "artifact": enrichment}
+    except Exception as e:
+        logger.debug("Enrichment skipped: %s", e)
