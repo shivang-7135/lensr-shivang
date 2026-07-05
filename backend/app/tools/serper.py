@@ -59,7 +59,7 @@ async def shutdown_clients() -> None:
 
 async def google_search(query: str, num: int = 5) -> list[dict]:
     """Search via Serper.dev and return organic results with rich metadata.
-    
+
     Returns list of dicts with keys: title, link, snippet, position.
     Also injects knowledge_graph and answer_box as synthetic results when available.
     """
@@ -102,14 +102,16 @@ async def google_search(query: str, num: int = 5) -> list[dict]:
         if kg.get("attributes"):
             for k, v in list(kg["attributes"].items())[:5]:
                 kg_snippet_parts.append(f"{k}: {v}")
-        
-        results.append({
-            "title": f"{kg['title']} — Knowledge Graph",
-            "link": kg.get("descriptionUrl") or kg.get("website") or "",
-            "snippet": " | ".join(kg_snippet_parts)[:500],
-            "position": 0,  # Highest priority
-            "source_type": "knowledge_graph",
-        })
+
+        results.append(
+            {
+                "title": f"{kg['title']} — Knowledge Graph",
+                "link": kg.get("descriptionUrl") or kg.get("website") or "",
+                "snippet": " | ".join(kg_snippet_parts)[:500],
+                "position": 0,  # Highest priority
+                "source_type": "knowledge_graph",
+            }
+        )
 
     # ─── Extract answer box (direct answer from Google) ───
     answer_box = data.get("answerBox")
@@ -117,36 +119,42 @@ async def google_search(query: str, num: int = 5) -> list[dict]:
         ab_title = answer_box.get("title") or answer_box.get("snippet") or ""
         ab_answer = answer_box.get("answer") or answer_box.get("snippet") or ""
         if ab_answer:
-            results.append({
-                "title": f"Answer: {ab_title[:80]}",
-                "link": answer_box.get("link") or "",
-                "snippet": ab_answer[:400],
-                "position": 0,
-                "source_type": "answer_box",
-            })
+            results.append(
+                {
+                    "title": f"Answer: {ab_title[:80]}",
+                    "link": answer_box.get("link") or "",
+                    "snippet": ab_answer[:400],
+                    "position": 0,
+                    "source_type": "answer_box",
+                }
+            )
 
     # ─── Extract "People Also Ask" for additional context ───
     paa = data.get("peopleAlsoAsk", [])
     for item in paa[:2]:  # Only top 2 to avoid noise
         if item.get("snippet"):
-            results.append({
-                "title": item.get("question", "Related"),
-                "link": item.get("link") or "",
-                "snippet": item["snippet"][:300],
-                "position": 99,  # Lower priority than organic
-                "source_type": "people_also_ask",
-            })
+            results.append(
+                {
+                    "title": item.get("question", "Related"),
+                    "link": item.get("link") or "",
+                    "snippet": item["snippet"][:300],
+                    "position": 99,  # Lower priority than organic
+                    "source_type": "people_also_ask",
+                }
+            )
 
     # ─── Extract organic results with position ───
     organic = data.get("organic", [])
     for i, it in enumerate(organic[:num]):
-        results.append({
-            "title": it.get("title"),
-            "link": it.get("link"),
-            "snippet": it.get("snippet"),
-            "position": i + 1,
-            "source_type": "organic",
-        })
+        results.append(
+            {
+                "title": it.get("title"),
+                "link": it.get("link"),
+                "snippet": it.get("snippet"),
+                "position": i + 1,
+                "source_type": "organic",
+            }
+        )
 
     return results
 
@@ -190,13 +198,15 @@ async def _fallback_search(query: str, num: int = 5) -> list[dict]:
             snippet = re.sub(r"<[^>]+>", "", snippets[i]).strip() if i < len(snippets) else ""
 
             if link and title:
-                results.append({
-                    "title": title,
-                    "link": link,
-                    "snippet": snippet,
-                    "position": i + 1,
-                    "source_type": "fallback_ddg",
-                })
+                results.append(
+                    {
+                        "title": title,
+                        "link": link,
+                        "snippet": snippet,
+                        "position": i + 1,
+                        "source_type": "fallback_ddg",
+                    }
+                )
 
         if results:
             logger.info("Fallback search succeeded with %d results", len(results))

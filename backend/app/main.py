@@ -60,7 +60,9 @@ class SearchBody(BaseModel):
     query: str = Field(..., max_length=MAX_QUERY_LENGTH)
     intent_hint: str | None = Field(default=None, max_length=100)
     fast_mode: bool | None = Field(default=False)
-    session_id: str | None = Field(default=None, max_length=64, description="Client session ID for Phoenix trace grouping")
+    session_id: str | None = Field(
+        default=None, max_length=64, description="Client session ID for Phoenix trace grouping"
+    )
 
 
 def _check_secret(provided: str | None) -> None:

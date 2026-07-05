@@ -366,7 +366,8 @@ function IntentSkeleton({ intent }: { intent: SearchIntent | null }) {
 const STREAM_TIMEOUT_MS = 90_000;
 
 // Stable session ID per browser tab — persists across searches within one session
-const SESSION_ID = typeof crypto !== "undefined" ? crypto.randomUUID() : Math.random().toString(36).slice(2);
+const SESSION_ID =
+  typeof crypto !== "undefined" ? crypto.randomUUID() : Math.random().toString(36).slice(2);
 
 export function ResultsStream({ query, fastMode = false }: { query: string; fastMode?: boolean }) {
   const [events, setEvents] = useState<StreamEvent[]>([]);
@@ -451,7 +452,8 @@ export function ResultsStream({ query, fastMode = false }: { query: string; fast
               structured.key_facts = ev.value;
             } else if (ev.field === "detail_markdown") {
               // Append delta chunks for streaming markdown
-              structured.detail_markdown = (structured.detail_markdown as string ?? "") + (ev.delta ?? "");
+              structured.detail_markdown =
+                ((structured.detail_markdown as string) ?? "") + (ev.delta ?? "");
             }
             return {
               structured,

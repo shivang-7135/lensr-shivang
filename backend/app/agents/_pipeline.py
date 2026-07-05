@@ -117,7 +117,7 @@ async def _llm_json(
     system: str, user: str, *, use_router: bool = False, use_fast_synth: bool = False, timeout: float = 30.0
 ) -> dict:
     """Call an LLM and parse its response as JSON.
-    
+
     Args:
         use_router: Use router_llm (Haiku, 256 tokens) — for classification/planning only
         use_fast_synth: Use fast_synthesis_llm (Haiku, 1024 tokens) — for fast mode synthesis
@@ -138,8 +138,10 @@ async def _llm_json(
             llm.ainvoke([SystemMessage(system), HumanMessage(user)], config=config),
             timeout=timeout,
         )
-    except asyncio.TimeoutError:
-        logger.warning("LLM call timed out after %.1fs (use_router=%s, use_fast_synth=%s)", timeout, use_router, use_fast_synth)
+    except TimeoutError:
+        logger.warning(
+            "LLM call timed out after %.1fs (use_router=%s, use_fast_synth=%s)", timeout, use_router, use_fast_synth
+        )
         return {}
     data = _parse_json(_text(msg))
     return data or {}
@@ -266,13 +268,13 @@ async def _fanout_search(queries: list[str]) -> list[dict]:
 
 async def _scrape(sources: list[dict], limit: int) -> list[dict]:
     """Scrape pages with progressive timeout — process results as they complete.
-    
+
     Uses asyncio.gather with a hard timeout. Returns whatever completed.
     """
     targets = sources[:limit]
     if not targets:
         return []
-        
+
     with span(
         "scrape.pages",
         span_kind="TOOL",
@@ -284,7 +286,7 @@ async def _scrape(sources: list[dict], limit: int) -> list[dict]:
                 asyncio.gather(*[fetch_clean(s["url"]) for s in targets], return_exceptions=True),
                 timeout=8.0,
             )
-        except asyncio.TimeoutError:
+        except TimeoutError:
             logger.warning("Scrape timed out after 8s — using whatever completed")
             bodies = [None] * len(targets)
 
@@ -303,29 +305,28 @@ async def _scrape(sources: list[dict], limit: int) -> list[dict]:
 
 def _evidence_sufficient(evidence: list[dict], keywords: list[str]) -> bool:
     """Heuristic check: is evidence rich enough to skip the reflection loop?
-    
+
     Returns True when:
     - At least 3 sources have scraped body text
     - Total evidence content exceeds 4000 chars
     - Evidence covers at least 2 of the extracted keywords/entities
-    
+
     This saves 2-4s by skipping the reflection LLM call for ~70% of queries.
     """
     scraped_count = sum(1 for e in evidence if e.get("body"))
     total_chars = sum(len(e.get("body", "")) + len(e.get("snippet", "")) for e in evidence)
-    
+
     if scraped_count < 3 or total_chars < 4000:
         return False
-    
+
     # Check keyword coverage in evidence
     if not keywords:
         return True  # No keywords to check, evidence volume is sufficient
-    
+
     evidence_text = " ".join(
-        (e.get("body", "") + " " + e.get("snippet", "") + " " + e.get("title", "")).lower()
-        for e in evidence
+        (e.get("body", "") + " " + e.get("snippet", "") + " " + e.get("title", "")).lower() for e in evidence
     )
-    
+
     covered = sum(1 for kw in keywords[:6] if kw.lower() in evidence_text)
     return covered >= min(2, len(keywords))
 
@@ -336,7 +337,7 @@ async def _reflect(query: str, evidence: list[dict], loop: int) -> dict:
         for i, e in enumerate(evidence[:8])
     )
     user = f"User query: {query}\n\nLoop: {loop}\n\nEvidence so far:\n{summary}"
-    
+
     # Use Haiku (router_llm) for reflection to optimize for speed
     # Reflection is a simple classification/generation task, no need for Sonnet
     return await _llm_json(REFLECT_SYS, user, use_router=True)
@@ -356,8 +357,14 @@ async def _synthesize(query: str, kw: dict, evidence: list[dict], cfg: IntentCon
 
     # Prioritise: knowledge_graph/answer_box > scraped > snippet-only
     kg_sources = [e for e in limited_evidence if e.get("source_type") in ("knowledge_graph", "answer_box")]
-    scraped = [e for e in limited_evidence if e.get("body") and e.get("source_type") not in ("knowledge_graph", "answer_box")]
-    snippets_only = [e for e in limited_evidence if not e.get("body") and e.get("source_type") not in ("knowledge_graph", "answer_box")]
+    scraped = [
+        e for e in limited_evidence if e.get("body") and e.get("source_type") not in ("knowledge_graph", "answer_box")
+    ]
+    snippets_only = [
+        e
+        for e in limited_evidence
+        if not e.get("body") and e.get("source_type") not in ("knowledge_graph", "answer_box")
+    ]
     ordered = (kg_sources + scraped + snippets_only)[:10]
 
     # Build context: increased caps for top sources
@@ -367,7 +374,7 @@ async def _synthesize(query: str, kw: dict, evidence: list[dict], cfg: IntentCon
     for i, e in enumerate(ordered):
         snippet = e.get("snippet", "")[:400]  # Increased from 250
         body = e.get("body", "")
-        
+
         # Tiered context caps: top scraped sources get more context
         if body and e.get("source_type") not in ("knowledge_graph", "answer_box"):
             scraped_idx += 1
@@ -375,7 +382,7 @@ async def _synthesize(query: str, kw: dict, evidence: list[dict], cfg: IntentCon
             body = body[:body_cap]
         elif body:
             body = body[:500]  # KG/answer box are already concise
-            
+
         source_label = f" [{e.get('source_type', 'organic')}]" if e.get("source_type") not in ("organic", None) else ""
         context_parts.append(
             f"[{i + 1}]{source_label} {e.get('title', 'Untitled')}\nURL: {e.get('url', '')}\n"
@@ -717,16 +724,17 @@ async def run_pipeline(query: str, cfg: IntentConfig) -> AsyncIterator[dict]:
     # Only call the reflection LLM when evidence is genuinely insufficient
     keywords_for_check = kw.get("keywords", []) + kw.get("entities", [])
     evidence_is_rich = _evidence_sufficient(evidence, keywords_for_check)
-    
+
     should_reflect = MAX_LOOPS > 1 and (
         not evidence_is_rich  # Always reflect when heuristic says evidence is thin
         and cfg.name in _REFLECTION_INTENTS  # Only for research-heavy intents
     )
-    
+
     if evidence_is_rich:
         logger.info(
             "Evidence sufficient (heuristic pass) — skipping reflection for '%s' (intent=%s)",
-            query[:50], cfg.name,
+            query[:50],
+            cfg.name,
         )
         yield {
             "type": "reflection",
@@ -790,7 +798,12 @@ async def run_pipeline(query: str, cfg: IntentConfig) -> AsyncIterator[dict]:
         sections = detail_md.split("\n## ")
         for i, section in enumerate(sections):
             chunk = ("## " + section) if i > 0 else section
-            yield {"type": "partial_structured", "field": "detail_markdown", "delta": chunk, "done": i == len(sections) - 1}
+            yield {
+                "type": "partial_structured",
+                "field": "detail_markdown",
+                "delta": chunk,
+                "done": i == len(sections) - 1,
+            }
 
     if pipeline_span:
         pipeline_span.set_attribute("evidence.final_count", len(evidence))

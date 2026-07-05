@@ -190,7 +190,7 @@ async def _classify(query: str) -> Intent:
                 router_llm().ainvoke([SystemMessage(CLASSIFY_SYS), HumanMessage(query)], config=config),
                 timeout=5.0,  # Reduced from 8s — classification should be fast with compact prompt
             )
-        except (TimeoutError, asyncio.TimeoutError):
+        except TimeoutError:
             logger.warning("Intent classification timed out — defaulting to 'general'")
             return "general"  # type: ignore[return-value]
         raw = (

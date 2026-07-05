@@ -74,10 +74,10 @@ Lensr classifies every query into one of **35 backend intents** and renders a pu
 ## 3. Request flow (search)
 
 1. User submits a query on `/` or `/results` and selects the speed mode (**Fast** or **Deep**).
-2. Browser POSTs `/api/search` on the TanStack Start server with the query and the `fast_mode` flag.
+2. Browser POSTs `/api/search` on the TanStack Start server with the query, `fast_mode` flag, and a stable `session_id` (UUID per browser tab).
 3. `src/routes/api/search.ts`:
    - Validates origin, body size (8 KB max), and query length (2000 chars).
-   - Proxies the SSE stream to the Python backend with `X-Backend-Secret` and forwards the `fast_mode` parameter.
+   - Proxies the SSE stream to the Python backend with `X-Backend-Secret` and forwards the `fast_mode` + `session_id` parameters.
    - Returns 503 if `BACKEND_BASE_URL` is not configured.
 4. Python backend (`/search`):
    - Timing-safe auth check via `hmac.compare_digest`.
@@ -204,7 +204,11 @@ uvicorn app.main:app --reload --port 8000
 | `SERPER_API_KEY`                              | Google SERP via serper.dev (required)                   |
 | `BACKEND_SHARED_SECRET`                       | Must match the frontend secret (required in production) |
 | `CORS_ALLOW_ORIGIN`                           | Frontend domain (default: `http://localhost:3000`)      |
-| `DATABASE_URL`                                | Postgres connection (optional, for price history)       |
+| `DATABASE_URL`                                | Postgres connection (optional, for semantic cache)      |
+| `PHOENIX_API_KEY`                             | Phoenix API key for trace export                        |
+| `PHOENIX_COLLECTOR_ENDPOINT`                  | Phoenix OTLP endpoint                                  |
+| `PHOENIX_PROJECT_NAME`                        | Phoenix project name (default: `lensr`)                 |
+| `TRACING_ENABLED`                             | Set `false` to disable tracing                          |
 
 ---
 
@@ -230,17 +234,34 @@ The Dockerfile uses a multi-stage build with a non-root user. Set all env vars v
 
 ---
 
-## 10. CI/CD
+## 10. Observability (Phoenix)
+
+All backend traces are sent to [Arize Phoenix](https://app.phoenix.arize.com) using OpenTelemetry + OpenInference semantic conventions.
+
+- **Session grouping:** Every browser tab generates a stable `session_id` (UUID). All searches within the same tab are correlated into a single Phoenix session, visible under the **Sessions** tab.
+- **Span kinds:** `CHAIN` (pipeline steps), `TOOL` (Serper, scraper), `LLM` (synthesis, classification via LangChain auto-instrumentation).
+- **LangChain instrumentation:** The `openinference-instrumentation-langchain` package auto-instruments all Bedrock LLM calls with prompts, tokens, and latency. Session metadata is propagated via LangChain's `config.metadata.session_id`.
+
+| Env Variable                 | Purpose                            |
+| ---------------------------- | ---------------------------------- |
+| `PHOENIX_API_KEY`            | Phoenix API key                    |
+| `PHOENIX_COLLECTOR_ENDPOINT` | OTLP endpoint (default: Arize cloud) |
+| `PHOENIX_PROJECT_NAME`       | Project name in Phoenix (default: `lensr`) |
+| `TRACING_ENABLED`            | Set `false` to disable             |
+
+---
+
+## 11. CI/CD
 
 GitHub Actions pipeline (`.github/workflows/ci.yml`):
 
-- **Frontend:** lint → type-check → build
+- **Frontend:** lint (ESLint + Prettier) → type-check → build
 - **Backend:** ruff lint → ruff format → mypy → Docker build
 - Runs on every push to `main` and all PRs.
 
 ---
 
-## 11. Project structure
+## 12. Project structure
 
 ```
 ├── src/                      # Frontend (TanStack Start)
@@ -261,6 +282,7 @@ GitHub Actions pipeline (`.github/workflows/ci.yml`):
 │   │   ├── main.py           # FastAPI entrypoint
 │   │   ├── config.py         # Settings with startup validation
 │   │   ├── llm.py            # Bedrock client (retry + timeout)
+│   │   ├── observability.py  # Phoenix tracing (session-aware)
 │   │   ├── router_graph.py   # Intent classification
 │   │   ├── agents/           # 35 intent agents + shared pipeline
 │   │   └── tools/            # Serper search + SSRF-protected scraper
@@ -274,6 +296,6 @@ GitHub Actions pipeline (`.github/workflows/ci.yml`):
 
 ---
 
-## 12. Credits
+## 13. Credits
 
 Search powered by [Serper.dev](https://serper.dev) and [AWS Bedrock](https://aws.amazon.com/bedrock/) (Anthropic Claude Sonnet 4.5 & Haiku 4.5).
