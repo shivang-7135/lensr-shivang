@@ -7,7 +7,7 @@ const INTENT_CHIPS = [
   { label: "Buy a phone", q: "best phone under $700 for photography" },
   { label: "Plan a trip", q: "5-day trip to Lisbon in October" },
   { label: "Price history", q: "price history of Sony WH-1000XM5" },
-  { label: "Insta caption", q: "/insta" },
+  { label: "Best recipes", q: "easy 30-minute weeknight dinners with chicken" },
 ];
 
 export function SearchBar({

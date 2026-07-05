@@ -569,7 +569,7 @@ export function ResultsStream({
       clearTimeout(timeout);
       ctl.abort();
     };
-  }, [query, fastMode]);
+  }, [query, fastMode, imageUrl]);
 
   return (
     <>

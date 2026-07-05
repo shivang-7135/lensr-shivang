@@ -30,14 +30,7 @@ export const SEARCH_CATEGORIES: SearchCategory[] = [
     hint: "Day-by-day plan",
     example: "5-day trip to Lisbon in October",
   },
-  {
-    id: "insta",
-    emoji: "📸",
-    label: "Insta captions",
-    hint: "Upload + caption",
-    example: "/insta",
-    to: "/insta",
-  },
+
   {
     id: "recipes",
     emoji: "🍳",

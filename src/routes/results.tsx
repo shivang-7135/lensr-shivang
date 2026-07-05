@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { z } from "zod";
 import { motion } from "framer-motion";
+import { Lock } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SearchBar } from "@/components/SearchBar";
 import { ResultsStream } from "@/components/ResultsStream";
@@ -34,6 +36,17 @@ export const Route = createFileRoute("/results")({
 function ResultsPage() {
   const { q, image_url } = Route.useSearch();
   const [fastMode, setFastMode] = useState(true);
+  const [isAuthed, setIsAuthed] = useState(false);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => setIsAuthed(!!data.session));
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
+      setIsAuthed(!!session);
+      // Force fast mode if user signs out while on deep mode
+      if (!session) setFastMode(true);
+    });
+    return () => sub.subscription.unsubscribe();
+  }, []);
 
   return (
     <div className="min-h-screen flex flex-col overflow-x-hidden">
@@ -64,10 +77,14 @@ function ResultsPage() {
                 <span className="relative z-10">Fast</span>
               </button>
               <button
-                onClick={() => setFastMode(false)}
+                onClick={() => {
+                  if (isAuthed) setFastMode(false);
+                }}
+                disabled={!isAuthed}
+                title={!isAuthed ? "Sign in to use Deep mode" : "Deep research mode"}
                 className={`relative text-xs px-3.5 py-1.5 rounded-md font-medium transition-colors ${
                   !fastMode ? "text-foreground" : "text-muted-foreground"
-                }`}
+                } ${!isAuthed ? "opacity-50 cursor-not-allowed" : ""}`}
               >
                 {!fastMode && (
                   <motion.div
@@ -76,7 +93,10 @@ function ResultsPage() {
                     transition={{ type: "spring", stiffness: 400, damping: 30 }}
                   />
                 )}
-                <span className="relative z-10">Deep</span>
+                <span className="relative z-10 flex items-center gap-1">
+                  Deep
+                  {!isAuthed && <Lock className="h-3 w-3" />}
+                </span>
               </button>
             </motion.div>
           </div>

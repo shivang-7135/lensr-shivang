@@ -11,14 +11,17 @@
 
 Lensr classifies every query into one of **35 backend intents** and renders a purpose-built result card. The pipeline searches the web in real-time, scrapes relevant pages, and synthesizes a structured JSON response tailored to the detected intent.
 
-**35 intents:** shopping, price_history, trip, insta, movies, recipes, books, places, events, tech, health, finance, news, sports, howto, learning, jobs, local, comparison, gift, legal, gaming, diy, fitness, pets, music, productivity, weather, real_estate, automotive, food, fashion, parenting, dating, general.
+**35 intents:** shopping, price_history, trip, movies, recipes, books, places, events, tech, health, finance, news, sports, howto, learning, jobs, local, comparison, gift, legal, gaming, diy, fitness, pets, music, productivity, weather, real_estate, automotive, food, fashion, parenting, dating, general.
 
-**10 specialized result cards:** ShoppingResult, TripResult, PriceHistoryResult, InstaResult, MoviesResult, RecipesResult, BooksResult, PlacesResult, EventsResult + GeneralResult (fallback for all other intents).
+**9 specialized result cards:** ShoppingResult, TripResult, PriceHistoryResult, MoviesResult, RecipesResult, BooksResult, PlacesResult, EventsResult + GeneralResult (fallback for all other intents).
 
-1. **Real sources** — Every answer cites its web sources with clickable links.
-2. **External CTAs** — Amazon, Google Maps, Booking.com, Keepa, or publisher URLs — injected even when the LLM omits one.
-3. **Live SSE streaming** — intent → keywords + plan → parallel search → scrape → synthesize → final structured payload. Full pipeline visibility in the UI.
-4. **Dual Search Modes** — Choose between **Fast Mode** (bypasses planner and reflection loop for parallel, capped-source answers in <8-10s) and **Deep Mode** (runs multi-step search with deep LLM planning and data reflection).
+5. **Auth-gated Deep Mode** — Deep research (multi-step search + reflection) requires sign-in. Anonymous users get Fast mode only.
+6. **Dynamic Visual Enrichments** — After the answer is delivered, the backend generates a chart/table/timeline that appears with animation below the answer.
+
+7. **Real sources** — Every answer cites its web sources with clickable links.
+8. **External CTAs** — Amazon, Google Maps, Booking.com, Keepa, or publisher URLs — injected even when the LLM omits one.
+9. **Live SSE streaming** — intent → keywords + plan → parallel search → scrape → synthesize → final structured payload. Full pipeline visibility in the UI.
+10. **Dual Search Modes** — **Fast Mode** (parallel, snippet-only answers in <5s) for everyone; **Deep Mode** (multi-step search + scraping + reflection, 10-15s) requires sign-in via Google OAuth.
 
 ---
 
@@ -28,8 +31,8 @@ Lensr classifies every query into one of **35 backend intents** and renders a pu
  ┌──────────────────────────────────────────────────────────────────┐
  │                            Browser                               │
  │   React 19 · TanStack Router · Tailwind v4 · shadcn/ui           │
- │   Routes: /  /results  /insta  /saved  /admin  /auth             │
- │   Components: SearchBar · ResultsStream · 10 Result cards        │
+ │   Routes: /  /results  /saved  /admin  /auth                     │
+ │   Components: SearchBar · ResultsStream · 9 Result cards         │
  └──────────┬──────────────────────────────────────────┬────────────┘
             │ supabase-js (auth, RLS reads, storage)   │ fetch SSE
             ▼                                          ▼
@@ -99,7 +102,6 @@ Lensr classifies every query into one of **35 backend intents** and renders a pu
 | `ShoppingResult`     | shopping             | Product picks with pros/cons, prices, Amazon CTAs   |
 | `PriceHistoryResult` | price_history        | Price range, buy score, Keepa/CamelCamelCamel links |
 | `TripResult`         | trip                 | Day-by-day itinerary, Maps/Booking/Flights CTAs     |
-| `InstaResult`        | insta                | Caption styles + nearby place suggestions           |
 | `MoviesResult`       | movies               | Movie/TV picks with ratings, streaming links        |
 | `RecipesResult`      | recipes              | Step-by-step recipes with ingredients               |
 | `BooksResult`        | books                | Book recommendations with Goodreads links           |
