@@ -119,6 +119,7 @@ function RootShell({ children }: { children: ReactNode }) {
     <html lang="en">
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeBootstrapScript }} />
+        <script defer src="https://cloud.umami.is/script.js" data-website-id="26209e47-c86e-4567-a2a0-e1949f82ed40"></script>
         <HeadContent />
       </head>
       <body className="antialiased">
