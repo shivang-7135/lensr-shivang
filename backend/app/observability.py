@@ -72,6 +72,7 @@ def setup_tracing() -> None:
 
         if api_key:
             from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
+
             base = collector_endpoint.rstrip("/")
             if not base.startswith("http"):
                 base = f"https://{base}"
@@ -88,16 +89,17 @@ def setup_tracing() -> None:
             logger.info("Phoenix tracing configured → %s (project=%s)", otlp_endpoint, project_name)
         else:
             logger.info("PHOENIX_API_KEY not set — skipping Phoenix export")
-            
+
         if appinsights_conn_string:
             try:
                 from azure.monitor.opentelemetry.exporter import AzureMonitorTraceExporter
+
                 appinsights_exporter = AzureMonitorTraceExporter(connection_string=appinsights_conn_string)
                 provider.add_span_processor(BatchSpanProcessor(appinsights_exporter))
                 logger.info("Azure Application Insights tracing enabled")
             except ImportError:
                 logger.warning("azure-monitor-opentelemetry-exporter not installed — skipping App Insights export")
-        
+
         trace.set_tracer_provider(provider)
         _tracer = trace.get_tracer("lensr-backend")
 

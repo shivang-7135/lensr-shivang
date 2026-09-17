@@ -1,3 +1,4 @@
+import contextlib
 import logging
 import sys
 
@@ -40,27 +41,21 @@ if settings.azure_keyvault_url:
     try:
         from azure.identity import DefaultAzureCredential
         from azure.keyvault.secrets import SecretClient
-        
+
         credential = DefaultAzureCredential()
         client = SecretClient(vault_url=settings.azure_keyvault_url, credential=credential)
-        
+
         import os
-        
-        try:
+
+        with contextlib.suppress(Exception):
             settings.serper_api_key = client.get_secret("SERPER-API-KEY").value
-        except Exception:
-            pass
-            
-        try:
+
+        with contextlib.suppress(Exception):
             settings.backend_shared_secret = client.get_secret("BACKEND-SHARED-SECRET").value
-        except Exception:
-            pass
-            
-        try:
+
+        with contextlib.suppress(Exception):
             settings.database_url = client.get_secret("DATABASE-URL").value
-        except Exception:
-            pass
-            
+
         # Boto3 expects these in os.environ
         try:
             os.environ["AWS_ACCESS_KEY_ID"] = client.get_secret("AWS-ACCESS-KEY-ID").value
@@ -68,17 +63,17 @@ if settings.azure_keyvault_url:
             os.environ["AWS_REGION"] = client.get_secret("AWS-REGION").value
         except Exception:
             pass
-            
+
         try:
             settings.bedrock_model_reasoning = client.get_secret("BEDROCK-MODEL-REASONING").value
             settings.bedrock_model_router = client.get_secret("BEDROCK-MODEL-ROUTER").value
         except Exception:
             pass
-            
-        try:
-            os.environ["APPLICATIONINSIGHTS_CONNECTION_STRING"] = client.get_secret("APPLICATIONINSIGHTS-CONNECTION-STRING").value
-        except Exception:
-            pass
+
+        with contextlib.suppress(Exception):
+            os.environ["APPLICATIONINSIGHTS_CONNECTION_STRING"] = client.get_secret(
+                "APPLICATIONINSIGHTS-CONNECTION-STRING"
+            ).value
 
         logger.info("Successfully loaded secrets from Azure Key Vault")
     except Exception as e:
