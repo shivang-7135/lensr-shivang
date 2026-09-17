@@ -48,30 +48,17 @@ def setup_tracing() -> None:
     api_key = os.getenv("PHOENIX_API_KEY", "")
     collector_endpoint = os.getenv("PHOENIX_COLLECTOR_ENDPOINT", "https://app.phoenix.arize.com/s/shivangsinha2")
     project_name = os.getenv("PHOENIX_PROJECT_NAME", "lensr")
+    appinsights_conn_string = os.getenv("APPLICATIONINSIGHTS_CONNECTION_STRING")
 
-    if not api_key:
-        logger.warning("PHOENIX_API_KEY not set — tracing disabled")
+    if not api_key and not appinsights_conn_string:
+        logger.warning("Neither PHOENIX_API_KEY nor APPLICATIONINSIGHTS_CONNECTION_STRING set — tracing disabled")
         return
 
     try:
         from opentelemetry import trace
-        from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
         from opentelemetry.sdk.resources import Resource
         from opentelemetry.sdk.trace import TracerProvider
         from opentelemetry.sdk.trace.export import BatchSpanProcessor
-
-        base = collector_endpoint.rstrip("/")
-        if not base.startswith("http"):
-            base = f"https://{base}"
-        otlp_endpoint = f"{base}/v1/traces"
-
-        exporter = OTLPSpanExporter(
-            endpoint=otlp_endpoint,
-            headers={
-                "api_key": api_key,
-                "authorization": f"Bearer {api_key}",
-            },
-        )
 
         resource = Resource.create(
             {
@@ -82,7 +69,35 @@ def setup_tracing() -> None:
             }
         )
         provider = TracerProvider(resource=resource)
-        provider.add_span_processor(BatchSpanProcessor(exporter))
+
+        if api_key:
+            from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
+            base = collector_endpoint.rstrip("/")
+            if not base.startswith("http"):
+                base = f"https://{base}"
+            otlp_endpoint = f"{base}/v1/traces"
+
+            phoenix_exporter = OTLPSpanExporter(
+                endpoint=otlp_endpoint,
+                headers={
+                    "api_key": api_key,
+                    "authorization": f"Bearer {api_key}",
+                },
+            )
+            provider.add_span_processor(BatchSpanProcessor(phoenix_exporter))
+            logger.info("Phoenix tracing configured → %s (project=%s)", otlp_endpoint, project_name)
+        else:
+            logger.info("PHOENIX_API_KEY not set — skipping Phoenix export")
+            
+        if appinsights_conn_string:
+            try:
+                from azure.monitor.opentelemetry.exporter import AzureMonitorTraceExporter
+                appinsights_exporter = AzureMonitorTraceExporter(connection_string=appinsights_conn_string)
+                provider.add_span_processor(BatchSpanProcessor(appinsights_exporter))
+                logger.info("Azure Application Insights tracing enabled")
+            except ImportError:
+                logger.warning("azure-monitor-opentelemetry-exporter not installed — skipping App Insights export")
+        
         trace.set_tracer_provider(provider)
         _tracer = trace.get_tracer("lensr-backend")
 
@@ -91,15 +106,14 @@ def setup_tracing() -> None:
             from openinference.instrumentation.langchain import LangChainInstrumentor
 
             LangChainInstrumentor().instrument(tracer_provider=provider)
-            logger.info("LangChain auto-instrumented for Phoenix")
+            logger.info("LangChain auto-instrumented for Tracing")
         except ImportError:
             logger.warning("openinference-instrumentation-langchain not installed")
 
         _tracing_enabled = True
-        logger.info("Phoenix tracing → %s (project=%s)", otlp_endpoint, project_name)
 
     except Exception as exc:
-        logger.warning("Failed to initialise Phoenix tracing: %s", exc)
+        logger.warning("Failed to initialise tracing: %s", exc)
         _tracing_enabled = False
 
 

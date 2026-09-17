@@ -143,6 +143,11 @@ async def _llm_json(
             "LLM call timed out after %.1fs (use_router=%s, use_fast_synth=%s)", timeout, use_router, use_fast_synth
         )
         return {}
+    except Exception as e:
+        logger.error(
+            "LLM call failed (use_router=%s, use_fast_synth=%s): %s", use_router, use_fast_synth, e
+        )
+        return {}
     data = _parse_json(_text(msg))
     return data or {}
 

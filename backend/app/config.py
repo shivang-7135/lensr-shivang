@@ -20,6 +20,7 @@ class Settings(BaseSettings):
 
     backend_shared_secret: str = ""
     cors_allow_origin: str = "http://localhost:3000"
+    azure_keyvault_url: str | None = None
 
     # Semantic cache settings
     cache_enabled: bool = True
@@ -34,6 +35,33 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
+if settings.azure_keyvault_url:
+    try:
+        from azure.identity import DefaultAzureCredential
+        from azure.keyvault.secrets import SecretClient
+        
+        credential = DefaultAzureCredential()
+        client = SecretClient(vault_url=settings.azure_keyvault_url, credential=credential)
+        
+        try:
+            settings.serper_api_key = client.get_secret("SERPER-API-KEY").value
+        except Exception:
+            pass
+            
+        try:
+            settings.backend_shared_secret = client.get_secret("BACKEND-SHARED-SECRET").value
+        except Exception:
+            pass
+            
+        try:
+            settings.database_url = client.get_secret("DATABASE-URL").value
+        except Exception:
+            pass
+            
+        logger.info("Successfully loaded secrets from Azure Key Vault")
+    except Exception as e:
+        logger.warning(f"Failed to load secrets from Azure Key Vault: {e}")
 
 # --- Startup validation ---
 _INSECURE_SECRETS = {"", "change-me", "secret", "password"}

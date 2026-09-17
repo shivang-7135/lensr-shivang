@@ -193,6 +193,9 @@ async def _classify(query: str) -> Intent:
         except TimeoutError:
             logger.warning("Intent classification timed out — defaulting to 'general'")
             return "general"  # type: ignore[return-value]
+        except Exception as e:
+            logger.error("Intent classification failed: %s — defaulting to 'general'", e)
+            return "general"  # type: ignore[return-value]
         raw = (
             msg.content
             if isinstance(msg.content, str)
