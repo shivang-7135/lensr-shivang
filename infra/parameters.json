@@ -3,13 +3,16 @@
   "contentVersion": "1.0.0.0",
   "parameters": {
     "location": {
-      "value": "westeurope"
+      "value": "swedencentral"
     },
     "environmentName": {
-      "value": "lensr"
+      "value": "lensrprod"
     },
-    "containerImage": {
+    "backendImage": {
       "value": "ghcr.io/shivangsinha/lensr-backend:latest"
+    },
+    "frontendImage": {
+      "value": "ghcr.io/shivangsinha/lensr-frontend:latest"
     },
     "corsAllowOrigin": {
       "value": "https://lensr.studio,https://www.lensr.studio"

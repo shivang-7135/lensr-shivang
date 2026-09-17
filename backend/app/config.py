@@ -44,6 +44,8 @@ if settings.azure_keyvault_url:
         credential = DefaultAzureCredential()
         client = SecretClient(vault_url=settings.azure_keyvault_url, credential=credential)
         
+        import os
+        
         try:
             settings.serper_api_key = client.get_secret("SERPER-API-KEY").value
         except Exception:
@@ -59,6 +61,25 @@ if settings.azure_keyvault_url:
         except Exception:
             pass
             
+        # Boto3 expects these in os.environ
+        try:
+            os.environ["AWS_ACCESS_KEY_ID"] = client.get_secret("AWS-ACCESS-KEY-ID").value
+            os.environ["AWS_SECRET_ACCESS_KEY"] = client.get_secret("AWS-SECRET-ACCESS-KEY").value
+            os.environ["AWS_REGION"] = client.get_secret("AWS-REGION").value
+        except Exception:
+            pass
+            
+        try:
+            settings.bedrock_model_reasoning = client.get_secret("BEDROCK-MODEL-REASONING").value
+            settings.bedrock_model_router = client.get_secret("BEDROCK-MODEL-ROUTER").value
+        except Exception:
+            pass
+            
+        try:
+            os.environ["APPLICATIONINSIGHTS_CONNECTION_STRING"] = client.get_secret("APPLICATIONINSIGHTS-CONNECTION-STRING").value
+        except Exception:
+            pass
+
         logger.info("Successfully loaded secrets from Azure Key Vault")
     except Exception as e:
         logger.warning(f"Failed to load secrets from Azure Key Vault: {e}")
