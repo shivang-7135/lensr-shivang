@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as ResultsRouteImport } from './routes/results'
 import { Route as InstaRouteImport } from './routes/insta'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AppInfoRouteImport } from './routes/app-info'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiSearchRouteImport } from './routes/api/search'
@@ -33,6 +34,11 @@ const InstaRoute = InstaRouteImport.update({
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppInfoRoute = AppInfoRouteImport.update({
+  id: '/app-info',
+  path: '/app-info',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
@@ -72,6 +78,7 @@ const ApiPublicBackendKeysRoute = ApiPublicBackendKeysRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/app-info': typeof AppInfoRoute
   '/auth': typeof AuthRoute
   '/insta': typeof InstaRoute
   '/results': typeof ResultsRoute
@@ -83,6 +90,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/app-info': typeof AppInfoRoute
   '/auth': typeof AuthRoute
   '/insta': typeof InstaRoute
   '/results': typeof ResultsRoute
@@ -96,6 +104,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/app-info': typeof AppInfoRoute
   '/auth': typeof AuthRoute
   '/insta': typeof InstaRoute
   '/results': typeof ResultsRoute
@@ -109,6 +118,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/app-info'
     | '/auth'
     | '/insta'
     | '/results'
@@ -120,6 +130,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/app-info'
     | '/auth'
     | '/insta'
     | '/results'
@@ -132,6 +143,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/_authenticated'
+    | '/app-info'
     | '/auth'
     | '/insta'
     | '/results'
@@ -145,6 +157,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  AppInfoRoute: typeof AppInfoRoute
   AuthRoute: typeof AuthRoute
   InstaRoute: typeof InstaRoute
   ResultsRoute: typeof ResultsRoute
@@ -174,6 +187,13 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app-info': {
+      id: '/app-info'
+      path: '/app-info'
+      fullPath: '/app-info'
+      preLoaderRoute: typeof AppInfoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated': {
@@ -244,6 +264,7 @@ const AuthenticatedRouteRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AppInfoRoute: AppInfoRoute,
   AuthRoute: AuthRoute,
   InstaRoute: InstaRoute,
   ResultsRoute: ResultsRoute,

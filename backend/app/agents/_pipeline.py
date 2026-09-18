@@ -36,19 +36,13 @@ MAX_LOOPS = 2  # Allow one reflection + follow-up pass when evidence is thin
 MAX_SOURCES = 10  # Increased from 8 for richer evidence
 SCRAPE_TOP_N = 6  # Increased from 4 — progressive timeout handles slow ones
 
-# Intents that benefit from a reflection loop (research-heavy queries)
-_REFLECTION_INTENTS = frozenset(
+# Intents that should SKIP reflection (simple lookups, not research-heavy)
+_NO_REFLECTION_INTENTS = frozenset(
     {
-        "shopping",
-        "trip",
-        "price_history",
-        "comparison",
-        "real_estate",
-        "automotive",
-        "finance",
-        "legal",
-        "health",
-        "jobs",
+        "recipes",
+        "movies",
+        "events",
+        "places",
     }
 )
 
@@ -191,10 +185,10 @@ async def _extract_keywords(query: str) -> dict:
     return await _llm_json(KEYWORDS_SYS, query, use_router=True)
 
 
-async def _combined_plan(query: str, cfg: IntentConfig) -> tuple[dict, list[str]]:
+async def _combined_plan(query: str, cfg: IntentConfig, *, deep: bool = False) -> tuple[dict, list[str]]:
     """Single LLM call that extracts keywords AND plans queries (saves ~1.5s)."""
     sys = COMBINED_PLAN_SYS + "\n" + cfg.plan_hint
-    data = await _llm_json(sys, query, use_router=True)
+    data = await _llm_json(sys, query, use_router=not deep)
     kw = {
         "keywords": data.get("keywords", []),
         "entities": data.get("entities", []),
@@ -307,44 +301,45 @@ async def _scrape(sources: list[dict], limit: int) -> list[dict]:
         return enriched
 
 
-def _evidence_sufficient(evidence: list[dict], keywords: list[str]) -> bool:
+def _evidence_sufficient(evidence: list[dict], keywords: list[str], *, deep: bool = False) -> bool:
     """Heuristic check: is evidence rich enough to skip the reflection loop?
 
-    Returns True when:
-    - At least 3 sources have scraped body text
-    - Total evidence content exceeds 4000 chars
-    - Evidence covers at least 2 of the extracted keywords/entities
-
-    This saves 2-4s by skipping the reflection LLM call for ~70% of queries.
+    In deep mode, applies stricter thresholds to ensure thorough research.
+    Returns True when evidence volume and keyword coverage meet the bar.
     """
     scraped_count = sum(1 for e in evidence if e.get("body"))
     total_chars = sum(len(e.get("body", "")) + len(e.get("snippet", "")) for e in evidence)
 
-    if scraped_count < 3 or total_chars < 4000:
+    # Deep mode: require more evidence before skipping reflection
+    min_scraped = 5 if deep else 3
+    min_chars = 8000 if deep else 4000
+    min_keyword_hits = 3 if deep else 2
+
+    if scraped_count < min_scraped or total_chars < min_chars:
         return False
 
     # Check keyword coverage in evidence
     if not keywords:
-        return True  # No keywords to check, evidence volume is sufficient
+        return not deep  # In deep mode, always reflect when no keywords to verify
 
     evidence_text = " ".join(
         (e.get("body", "") + " " + e.get("snippet", "") + " " + e.get("title", "")).lower() for e in evidence
     )
 
     covered = sum(1 for kw in keywords[:6] if kw.lower() in evidence_text)
-    return covered >= min(2, len(keywords))
+    return covered >= min(min_keyword_hits, len(keywords))
 
 
-async def _reflect(query: str, evidence: list[dict], loop: int) -> dict:
+async def _reflect(query: str, evidence: list[dict], loop: int, *, deep: bool = False) -> dict:
     summary = "\n\n".join(
         f"[{i + 1}] {e['title']}\n{e['url']}\nsnippet: {e['snippet']}\nexcerpt: {e.get('body', '')[:600]}"
         for i, e in enumerate(evidence[:8])
     )
     user = f"User query: {query}\n\nLoop: {loop}\n\nEvidence so far:\n{summary}"
 
-    # Use Haiku (router_llm) for reflection to optimize for speed
-    # Reflection is a simple classification/generation task, no need for Sonnet
-    return await _llm_json(REFLECT_SYS, user, use_router=True)
+    # Deep mode: use reasoning_llm (Sonnet) for higher quality reflection
+    # Fast mode: use router_llm (Haiku) for speed
+    return await _llm_json(REFLECT_SYS, user, use_router=not deep)
 
 
 async def _synthesize(query: str, kw: dict, evidence: list[dict], cfg: IntentConfig) -> tuple[dict, str]:
@@ -689,7 +684,7 @@ async def run_pipeline(query: str, cfg: IntentConfig) -> AsyncIterator[dict]:
     # NOTE: stage:plan already emitted by router_graph before classification.
     # Single combined LLM call: extract keywords + plan queries
     try:
-        kw, planned_queries = await asyncio.wait_for(_combined_plan(query, cfg), timeout=8.0)
+        kw, planned_queries = await asyncio.wait_for(_combined_plan(query, cfg, deep=True), timeout=15.0)
     except (TimeoutError, Exception) as e:
         logger.warning("Planner failed or timed out: %s. Falling back to seed queries.", e)
         kw = {"keywords": [], "entities": [], "constraints": [], "intent_summary": "Fallback to base intent"}
@@ -789,11 +784,11 @@ async def run_pipeline(query: str, cfg: IntentConfig) -> AsyncIterator[dict]:
     # ⚡ Heuristic reflection skip — saves 2-4s for ~70% of queries
     # Only call the reflection LLM when evidence is genuinely insufficient
     keywords_for_check = kw.get("keywords", []) + kw.get("entities", [])
-    evidence_is_rich = _evidence_sufficient(evidence, keywords_for_check)
+    evidence_is_rich = _evidence_sufficient(evidence, keywords_for_check, deep=True)
 
     should_reflect = MAX_LOOPS > 1 and (
         not evidence_is_rich  # Always reflect when heuristic says evidence is thin
-        and cfg.name in _REFLECTION_INTENTS  # Only for research-heavy intents
+        and cfg.name not in _NO_REFLECTION_INTENTS  # Skip only for simple lookup intents
     )
 
     if evidence_is_rich:
@@ -815,7 +810,7 @@ async def run_pipeline(query: str, cfg: IntentConfig) -> AsyncIterator[dict]:
             "followup_queries": [],
         }
     elif should_reflect:
-        reflection = await _reflect(query, evidence, 1)
+        reflection = await _reflect(query, evidence, 1, deep=True)
         yield {
             "type": "reflection",
             "loop": 1,
