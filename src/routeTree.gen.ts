@@ -19,7 +19,6 @@ import { Route as ApiCacheClearRouteImport } from './routes/api/cache-clear'
 import { Route as AuthenticatedSavedRouteImport } from './routes/_authenticated/saved'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as ApiPublicBackendKeysRouteImport } from './routes/api/public/backend-keys'
-import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 
 const ResultsRoute = ResultsRouteImport.update({
   id: '/results',
@@ -70,11 +69,6 @@ const ApiPublicBackendKeysRoute = ApiPublicBackendKeysRouteImport.update({
   path: '/api/public/backend-keys',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
-  id: '/api/auth/$',
-  path: '/api/auth/$',
-  getParentRoute: () => rootRouteImport,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -85,7 +79,6 @@ export interface FileRoutesByFullPath {
   '/saved': typeof AuthenticatedSavedRoute
   '/api/cache-clear': typeof ApiCacheClearRoute
   '/api/search': typeof ApiSearchRoute
-  '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/public/backend-keys': typeof ApiPublicBackendKeysRoute
 }
 export interface FileRoutesByTo {
@@ -97,7 +90,6 @@ export interface FileRoutesByTo {
   '/saved': typeof AuthenticatedSavedRoute
   '/api/cache-clear': typeof ApiCacheClearRoute
   '/api/search': typeof ApiSearchRoute
-  '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/public/backend-keys': typeof ApiPublicBackendKeysRoute
 }
 export interface FileRoutesById {
@@ -111,7 +103,6 @@ export interface FileRoutesById {
   '/_authenticated/saved': typeof AuthenticatedSavedRoute
   '/api/cache-clear': typeof ApiCacheClearRoute
   '/api/search': typeof ApiSearchRoute
-  '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/public/backend-keys': typeof ApiPublicBackendKeysRoute
 }
 export interface FileRouteTypes {
@@ -125,7 +116,6 @@ export interface FileRouteTypes {
     | '/saved'
     | '/api/cache-clear'
     | '/api/search'
-    | '/api/auth/$'
     | '/api/public/backend-keys'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -137,7 +127,6 @@ export interface FileRouteTypes {
     | '/saved'
     | '/api/cache-clear'
     | '/api/search'
-    | '/api/auth/$'
     | '/api/public/backend-keys'
   id:
     | '__root__'
@@ -150,7 +139,6 @@ export interface FileRouteTypes {
     | '/_authenticated/saved'
     | '/api/cache-clear'
     | '/api/search'
-    | '/api/auth/$'
     | '/api/public/backend-keys'
   fileRoutesById: FileRoutesById
 }
@@ -162,7 +150,6 @@ export interface RootRouteChildren {
   ResultsRoute: typeof ResultsRoute
   ApiCacheClearRoute: typeof ApiCacheClearRoute
   ApiSearchRoute: typeof ApiSearchRoute
-  ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiPublicBackendKeysRoute: typeof ApiPublicBackendKeysRoute
 }
 
@@ -238,13 +225,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicBackendKeysRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/auth/$': {
-      id: '/api/auth/$'
-      path: '/api/auth/$'
-      fullPath: '/api/auth/$'
-      preLoaderRoute: typeof ApiAuthSplatRouteImport
-      parentRoute: typeof rootRouteImport
-    }
   }
 }
 
@@ -269,7 +249,6 @@ const rootRouteChildren: RootRouteChildren = {
   ResultsRoute: ResultsRoute,
   ApiCacheClearRoute: ApiCacheClearRoute,
   ApiSearchRoute: ApiSearchRoute,
-  ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiPublicBackendKeysRoute: ApiPublicBackendKeysRoute,
 }
 export const routeTree = rootRouteImport
