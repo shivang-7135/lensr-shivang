@@ -17,6 +17,13 @@ param frontendImage string = 'ghcr.io/shivangsinha/lensr-frontend:latest'
 @description('The allowed CORS origins')
 param corsAllowOrigin string = 'https://lensr.studio,https://www.lensr.studio'
 
+@description('GitHub PAT for pulling images from GHCR')
+@secure()
+param githubToken string
+
+@description('GitHub username for GHCR')
+param githubUsername string = 'shivang-7135'
+
 // Resource Names
 var logAnalyticsName = '${environmentName}-logs'
 var appInsightsName = '${environmentName}-insights'
@@ -77,10 +84,19 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-02-01' = {
 resource backendApp 'Microsoft.App/containerApps@2023-05-01' = {
   name: backendAppName
   location: location
-  identity: { type: 'SystemAssigned' }
   properties: {
     managedEnvironmentId: containerAppEnv.id
     configuration: {
+      secrets: [
+        { name: 'ghcr-password', value: githubToken }
+      ]
+      registries: [
+        {
+          server: 'ghcr.io'
+          username: githubUsername
+          passwordSecretRef: 'ghcr-password'
+        }
+      ]
       ingress: {
         external: true
         targetPort: 8000
@@ -107,10 +123,19 @@ resource backendApp 'Microsoft.App/containerApps@2023-05-01' = {
 resource frontendApp 'Microsoft.App/containerApps@2023-05-01' = {
   name: frontendAppName
   location: location
-  identity: { type: 'SystemAssigned' }
   properties: {
     managedEnvironmentId: containerAppEnv.id
     configuration: {
+      secrets: [
+        { name: 'ghcr-password', value: githubToken }
+      ]
+      registries: [
+        {
+          server: 'ghcr.io'
+          username: githubUsername
+          passwordSecretRef: 'ghcr-password'
+        }
+      ]
       ingress: {
         external: true
         targetPort: 3000
@@ -131,22 +156,5 @@ resource frontendApp 'Microsoft.App/containerApps@2023-05-01' = {
   }
 }
 
-// 7. Key Vault Access Policies
-resource keyVaultAccessPolicyBackend 'Microsoft.KeyVault/vaults/accessPolicies@2023-02-01' = {
-  parent: keyVault
-  name: 'add'
-  properties: {
-    accessPolicies: [
-      {
-        tenantId: subscription().tenantId
-        objectId: backendApp.identity.principalId
-        permissions: { secrets: ['get'] }
-      }
-      {
-        tenantId: subscription().tenantId
-        objectId: frontendApp.identity.principalId
-        permissions: { secrets: ['get'] }
-      }
-    ]
-  }
-}
+
+
