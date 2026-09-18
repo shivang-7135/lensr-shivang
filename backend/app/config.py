@@ -11,9 +11,9 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     aws_region: str = "eu-west-1"
-    bedrock_model_reasoning: str = "eu.anthropic.claude-sonnet-4-5-20250929-v1:0"
-    bedrock_model_router: str = "eu.anthropic.claude-haiku-4-5-20251001-v1:0"
-    bedrock_model_vision: str = "eu.anthropic.claude-sonnet-4-5-20250929-v1:0"
+    bedrock_model_reasoning: str = "eu.anthropic.claude-3-5-sonnet-20240620-v1:0"
+    bedrock_model_router: str = "eu.anthropic.claude-3-haiku-20240307-v1:0"
+    bedrock_model_vision: str = "eu.anthropic.claude-3-5-sonnet-20240620-v1:0"
 
     serper_api_key: str | None = None
     tavily_api_key: str | None = None
@@ -60,7 +60,9 @@ if settings.azure_keyvault_url:
         try:
             os.environ["AWS_ACCESS_KEY_ID"] = client.get_secret("AWS-ACCESS-KEY-ID").value
             os.environ["AWS_SECRET_ACCESS_KEY"] = client.get_secret("AWS-SECRET-ACCESS-KEY").value
-            os.environ["AWS_REGION"] = client.get_secret("AWS-REGION").value
+            aws_region = client.get_secret("AWS-REGION").value
+            os.environ["AWS_REGION"] = aws_region
+            settings.aws_region = aws_region
         except Exception:
             pass
 
