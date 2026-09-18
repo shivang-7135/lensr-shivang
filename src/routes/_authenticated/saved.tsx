@@ -1,62 +1,60 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { createFileRoute } from "@tanstack/react-router";
 import { SiteHeader } from "@/components/SiteHeader";
+import { Search, Clock } from "lucide-react";
+import { getSavedSearches } from "@/lib/saved.functions";
+import { useQuery } from "@tanstack/react-query";
 
 export const Route = createFileRoute("/_authenticated/saved")({
-  head: () => ({ meta: [{ title: "Saved searches — Lensr" }] }),
+  head: () => ({ meta: [{ title: "Saved Searches — Lensr" }] }),
   component: SavedPage,
 });
 
-type Saved = { id: string; query: string; intent: string; created_at: string };
-
 function SavedPage() {
-  const [items, setItems] = useState<Saved[] | null>(null);
-  useEffect(() => {
-    supabase
-      .from("saved_searches")
-      .select("id, query, intent, created_at")
-      .order("created_at", { ascending: false })
-      .limit(50)
-      .then(({ data }) => setItems((data ?? []) as Saved[]));
-  }, []);
+  const { data: searches, isLoading } = useQuery({
+    queryKey: ["saved_searches"],
+    queryFn: () => getSavedSearches(),
+  });
 
   return (
     <div className="min-h-screen flex flex-col">
       <SiteHeader />
-      <main className="flex-1 mx-auto max-w-3xl w-full px-6 py-12">
-        <h1 className="display text-4xl font-bold mb-2">Saved searches</h1>
-        <p className="text-muted-foreground mb-8">Your past queries and the agent's answers.</p>
-        {items === null && <p className="text-muted-foreground">Loading…</p>}
-        {items && items.length === 0 && (
-          <div className="border-2 border-dashed border-border rounded-xl p-8 text-center">
-            <p className="text-muted-foreground mb-4">Nothing saved yet.</p>
-            <Link to="/" className="underline decoration-accent underline-offset-4">
-              Run a search →
-            </Link>
+      <main className="flex-1 max-w-3xl w-full mx-auto p-6">
+        <div className="mb-8">
+          <h1 className="display text-3xl font-bold mb-2">Saved Searches</h1>
+          <p className="text-muted-foreground">Your recent research history.</p>
+        </div>
+
+        {isLoading ? (
+          <div className="flex justify-center p-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-foreground"></div>
+          </div>
+        ) : !searches?.length ? (
+          <div className="text-center p-12 border-2 border-dashed border-border rounded-xl">
+            <Clock className="mx-auto h-8 w-8 text-muted-foreground mb-3" />
+            <p className="text-muted-foreground">No saved searches yet.</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {searches.map((s) => (
+              <a
+                key={s.id}
+                href={`/results?q=${encodeURIComponent(s.query)}`}
+                className="block p-4 border border-border rounded-xl hover:bg-secondary/50 transition flex items-start gap-4"
+              >
+                <div className="bg-secondary p-2 rounded-lg mt-0.5">
+                  <Search className="h-4 w-4" />
+                </div>
+                <div>
+                  <h3 className="font-medium line-clamp-1">{s.query}</h3>
+                  <div className="flex items-center gap-3 mt-1.5 text-xs text-muted-foreground">
+                    <span className="capitalize px-2 py-0.5 bg-muted rounded-full">{s.intent}</span>
+                    <span>{new Date(s.created_at).toLocaleDateString()}</span>
+                  </div>
+                </div>
+              </a>
+            ))}
           </div>
         )}
-        <ul className="space-y-3">
-          {items?.map((s) => (
-            <li key={s.id}>
-              <Link
-                to="/results"
-                search={{ q: s.query }}
-                className="block border border-border rounded-lg p-4 hover:border-foreground/40 transition bg-card"
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <span className="font-medium truncate">{s.query}</span>
-                  <span className="text-xs uppercase tracking-widest text-muted-foreground">
-                    {s.intent}
-                  </span>
-                </div>
-                <div className="text-xs text-muted-foreground mt-1">
-                  {new Date(s.created_at).toLocaleString()}
-                </div>
-              </Link>
-            </li>
-          ))}
-        </ul>
       </main>
     </div>
   );

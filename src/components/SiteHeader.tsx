@@ -1,14 +1,13 @@
 import { Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { motion, useMotionValueEvent, useScroll } from "framer-motion";
-import { supabase } from "@/integrations/supabase/client";
+import { authClient, useSession } from "@/lib/auth-client";
 import { ThemeToggle } from "./ThemeToggle";
 
 export function SiteHeader() {
-  const [email, setEmail] = useState<string | null>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
   const [hidden, setHidden] = useState(false);
   const { scrollY } = useScroll();
+  const { data: session } = useSession();
 
   useMotionValueEvent(scrollY, "change", (latest) => {
     const previous = scrollY.getPrevious() ?? 0;
@@ -19,30 +18,8 @@ export function SiteHeader() {
     }
   });
 
-  useEffect(() => {
-    const sync = async (userId: string | undefined) => {
-      if (!userId) {
-        setIsAdmin(false);
-        return;
-      }
-      const { data } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", userId)
-        .eq("role", "admin")
-        .maybeSingle();
-      setIsAdmin(!!data);
-    };
-    supabase.auth.getSession().then(({ data }) => {
-      setEmail(data.session?.user.email ?? null);
-      sync(data.session?.user.id);
-    });
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
-      setEmail(session?.user.email ?? null);
-      sync(session?.user.id);
-    });
-    return () => sub.subscription.unsubscribe();
-  }, []);
+  const email = session?.user?.email;
+  const isAdmin = session?.user?.role === "admin";
 
   return (
     <motion.header
@@ -77,7 +54,7 @@ export function SiteHeader() {
           <ThemeToggle />
           {email ? (
             <button
-              onClick={() => supabase.auth.signOut()}
+              onClick={() => authClient.signOut()}
               className="px-3 py-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
             >
               Sign out

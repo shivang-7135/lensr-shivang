@@ -3,7 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { z } from "zod";
 import { motion } from "framer-motion";
 import { Lock } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { authClient, useSession } from "@/lib/auth-client";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SearchBar } from "@/components/SearchBar";
 import { ResultsStream } from "@/components/ResultsStream";
@@ -36,17 +36,13 @@ export const Route = createFileRoute("/results")({
 function ResultsPage() {
   const { q, image_url } = Route.useSearch();
   const [fastMode, setFastMode] = useState(true);
-  const [isAuthed, setIsAuthed] = useState(false);
+
+  const { data: session } = useSession();
+  const isAuthed = !!session;
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => setIsAuthed(!!data.session));
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
-      setIsAuthed(!!session);
-      // Force fast mode if user signs out while on deep mode
-      if (!session) setFastMode(true);
-    });
-    return () => sub.subscription.unsubscribe();
-  }, []);
+    if (!session) setFastMode(true);
+  }, [session]);
 
   return (
     <div className="min-h-screen flex flex-col overflow-x-hidden">

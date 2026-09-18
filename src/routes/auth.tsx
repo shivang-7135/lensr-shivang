@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { authClient } from "@/lib/auth-client";
 import { SiteHeader } from "@/components/SiteHeader";
 
 export const Route = createFileRoute("/auth")({
@@ -16,11 +16,11 @@ function AuthPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const { data: session } = authClient.useSession();
+
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) nav({ to: "/" });
-    });
-  }, [nav]);
+    if (session) nav({ to: "/" });
+  }, [session, nav]);
 
   async function submit(e: FormEvent) {
     e.preventDefault();
@@ -28,11 +28,11 @@ function AuthPage() {
     setLoading(true);
     const fn =
       mode === "signin"
-        ? supabase.auth.signInWithPassword({ email, password })
-        : supabase.auth.signUp({
+        ? authClient.signIn.email({ email, password })
+        : authClient.signUp.email({
             email,
             password,
-            options: { emailRedirectTo: window.location.origin },
+            name: email.split("@")[0],
           });
     const { error } = await fn;
     setLoading(false);
@@ -42,9 +42,8 @@ function AuthPage() {
 
   async function google() {
     setError(null);
-    const { error } = await supabase.auth.signInWithOAuth({
+    const { error } = await authClient.signIn.social({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}/` },
     });
     if (error) setError(error.message ?? "Google sign-in failed.");
   }

@@ -1,7 +1,45 @@
--- Enable pgvector extension for semantic similarity search
+-- Azure PostgreSQL Schema for Lensr
+-- This schema consolidates application tables and functions for the migration to Azure.
+-- Note: better-auth tables are auto-created by the library.
+
 CREATE EXTENSION IF NOT EXISTS vector;
 
--- Semantic cache table: stores query embeddings + full pipeline results
+CREATE TYPE public.app_role AS ENUM ('admin', 'user');
+
+CREATE TABLE public.user_roles (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id TEXT NOT NULL,  -- references better-auth user.id
+    role public.app_role NOT NULL DEFAULT 'user',
+    UNIQUE(user_id, role)
+);
+CREATE INDEX idx_user_roles_user ON public.user_roles(user_id);
+
+CREATE TABLE public.saved_searches (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id TEXT NOT NULL,
+    query TEXT NOT NULL,
+    intent TEXT NOT NULL DEFAULT 'general',
+    response_json JSONB,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+CREATE INDEX idx_saved_searches_user ON public.saved_searches(user_id, created_at DESC);
+
+CREATE TABLE public.uploaded_images (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id TEXT NOT NULL,
+    storage_path TEXT NOT NULL,
+    public_url TEXT,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE TABLE public.api_keys (
+    name TEXT PRIMARY KEY,
+    value TEXT NOT NULL,
+    description TEXT,
+    updated_at TIMESTAMPTZ DEFAULT now(),
+    updated_by TEXT
+);
+
 CREATE TABLE public.search_cache (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     query TEXT NOT NULL,
@@ -16,18 +54,14 @@ CREATE TABLE public.search_cache (
     expires_at TIMESTAMPTZ DEFAULT (now() + interval '24 hours')
 );
 
--- Index for fast vector similarity search (IVFFlat for good recall at scale)
 CREATE INDEX idx_search_cache_embedding ON public.search_cache
     USING ivfflat (embedding vector_cosine_ops)
     WITH (lists = 100);
 
--- Index for TTL cleanup
 CREATE INDEX idx_search_cache_expires ON public.search_cache (expires_at);
 
--- Unique index for exact text match (fast path + upsert support)
 CREATE UNIQUE INDEX idx_search_cache_normalized ON public.search_cache (query_normalized);
 
--- Function: find semantically similar cached results
 CREATE OR REPLACE FUNCTION public.match_search_cache(
     query_embedding vector(1024),
     match_threshold FLOAT DEFAULT 0.88,
@@ -59,18 +93,6 @@ AS $$
     LIMIT match_count;
 $$;
 
--- RLS: cache is managed by the backend (service role), not by end users
-ALTER TABLE public.search_cache ENABLE ROW LEVEL SECURITY;
-
--- Allow service role full access
-CREATE POLICY "service_role_all" ON public.search_cache
-    FOR ALL USING (true) WITH CHECK (true);
-
--- Allow authenticated users to read (for potential client-side cache checks)
-CREATE POLICY "authenticated_read" ON public.search_cache
-    FOR SELECT TO authenticated USING (true);
-
--- Cleanup function: delete expired entries (call via pg_cron or manually)
 CREATE OR REPLACE FUNCTION public.cleanup_expired_cache()
 RETURNS INTEGER
 LANGUAGE plpgsql
@@ -82,4 +104,14 @@ BEGIN
     GET DIAGNOSTICS deleted_count = ROW_COUNT;
     RETURN deleted_count;
 END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.has_role(_user_id TEXT, _role public.app_role)
+RETURNS BOOLEAN
+LANGUAGE sql STABLE SECURITY DEFINER
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.user_roles
+    WHERE user_id = _user_id AND role = _role
+  );
 $$;
