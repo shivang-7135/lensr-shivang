@@ -114,13 +114,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   errorComponent: ErrorComponent,
 });
 
-const envScript =
-  typeof process !== "undefined"
-    ? `window.ENV = ${JSON.stringify({
-        VITE_SUPABASE_URL: process.env.VITE_SUPABASE_URL,
-        VITE_SUPABASE_ANON_KEY: process.env.VITE_SUPABASE_ANON_KEY,
-      })};`
-    : "";
+const envScript = `window.ENV = ${JSON.stringify({
+  VITE_SUPABASE_URL: (globalThis as any).process?.env?.VITE_SUPABASE_URL,
+  VITE_SUPABASE_ANON_KEY: (globalThis as any).process?.env?.VITE_SUPABASE_ANON_KEY,
+})};`;
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
