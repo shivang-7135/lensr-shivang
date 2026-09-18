@@ -66,6 +66,17 @@ jobs:
           docker push ghcr.io/${{ github.repository_owner }}/lensr-backend:${{ github.sha }}
           docker push ghcr.io/${{ github.repository_owner }}/lensr-backend:latest
 
+      - name: Log in to Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Update Backend Container App
+        run: |
+          az containerapp update \
+            --name lensrprod-backend \
+            --resource-group lensr-sweden-prod \
+            --image ghcr.io/${{ github.repository_owner }}/lensr-backend:${{ github.sha }}
 
   deploy-frontend:
     name: Deploy Frontend
@@ -85,4 +96,16 @@ jobs:
           docker build -t ghcr.io/${{ github.repository_owner }}/lensr-frontend:${{ github.sha }} -t ghcr.io/${{ github.repository_owner }}/lensr-frontend:latest .
           docker push ghcr.io/${{ github.repository_owner }}/lensr-frontend:${{ github.sha }}
           docker push ghcr.io/${{ github.repository_owner }}/lensr-frontend:latest
+
+      - name: Log in to Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Update Frontend Container App
+        run: |
+          az containerapp update \
+            --name lensrprod-frontend \
+            --resource-group lensr-sweden-prod \
+            --image ghcr.io/${{ github.repository_owner }}/lensr-frontend:${{ github.sha }}
 
