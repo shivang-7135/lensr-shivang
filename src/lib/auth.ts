@@ -8,7 +8,7 @@ export const auth = betterAuth({
   secret: process.env.BETTER_AUTH_SECRET,
   database: new pg.Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: true } : undefined,
+    ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : undefined,
   }),
   emailAndPassword: {
     enabled: true,
