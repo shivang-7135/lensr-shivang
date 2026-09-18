@@ -11,12 +11,14 @@ declare global {
 function createSupabaseClient() {
   // Use import.meta.env for client-side (Vite build-time replacement)
   // Fall back to process.env for SSR (server-side rendering)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const processEnv = (globalThis as any).process?.env || {};
-  
+
   // Prefer processEnv (server) or window.ENV (client), fall back to import.meta.env
   const SUPABASE_URL =
     (typeof window !== "undefined" ? window.ENV?.VITE_SUPABASE_URL : undefined) ||
-    processEnv.VITE_SUPABASE_URL || processEnv.SUPABASE_URL ||
+    processEnv.VITE_SUPABASE_URL ||
+    processEnv.SUPABASE_URL ||
     import.meta.env.VITE_SUPABASE_URL;
 
   const SUPABASE_KEY =
