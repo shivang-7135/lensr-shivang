@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Clock, Zap, BarChart3 } from "lucide-react";
+import { Clock, Zap, BarChart3, Sparkles } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type {
@@ -62,6 +62,19 @@ const INTENT_LABEL: Record<SearchIntent, string> = {
 };
 
 type Sources = { title: string; url: string }[];
+
+function formatModelName(raw: string): string {
+  if (!raw) return "";
+  const lower = raw.toLowerCase();
+  if (lower.includes("opus")) return "Claude 3 Opus";
+  if (lower.includes("sonnet")) {
+    if (lower.includes("v2") || lower.includes("20241022")) return "Claude 3.5 Sonnet v2";
+    return "Claude 3.5 Sonnet";
+  }
+  if (lower.includes("haiku")) return "Claude 3 Haiku";
+  if (lower.includes("cache")) return "Instant Cache";
+  return raw.replace(/^(eu\.|us\.)?anthropic\./, "").split("-")[0] || raw;
+}
 
 function hasArr(d: Record<string, unknown> | null, key: string): boolean {
   return !!d && Array.isArray(d[key]) && (d[key] as unknown[]).length > 0;
@@ -398,6 +411,7 @@ export function ResultsStream({
   const [enrichment, setEnrichment] = useState<EnrichmentArtifact | null>(null);
   // true = answer done but enrichment not yet received; false = enrichment arrived or stream closed
   const [enrichmentPending, setEnrichmentPending] = useState(false);
+  const [model, setModel] = useState<string | null>(null);
 
   // Elapsed time tracking
   const startTimeRef = useRef(Date.now());
@@ -433,6 +447,7 @@ export function ResultsStream({
     setError(null);
     setEnrichment(null);
     setEnrichmentPending(false);
+    setModel(null);
     startTimeRef.current = Date.now();
     setElapsed(0);
     setFinalElapsed(null);
@@ -483,6 +498,7 @@ export function ResultsStream({
         }
         if (ev.type === "final") {
           setIntent(ev.intent);
+          if (ev.model) setModel(ev.model);
           setFinal({
             structured: (ev.structured as Record<string, unknown>) ?? null,
             markdown: ev.markdown ?? "",
@@ -615,6 +631,13 @@ export function ResultsStream({
                   {INTENT_LABEL[intent]}
                 </span>
               )}
+              <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md bg-accent/10 border border-accent/20 text-accent font-medium">
+                <Sparkles className="h-3 w-3" />
+                {formatModelName(
+                  model ||
+                    (cached ? "Instant Cache" : fastMode ? "Claude 3 Haiku" : "Claude 3.5 Sonnet"),
+                )}
+              </span>
               {!done && !error && !cached && (
                 <span className="hidden sm:inline-flex items-center gap-1 text-[10px] text-muted-foreground font-mono tabular-nums">
                   <Clock className="h-3 w-3" />

@@ -283,6 +283,7 @@ export type StreamEvent =
   | {
       type: "final";
       intent: SearchIntent;
+      model?: string;
       structured?: Record<string, unknown>;
       markdown: string;
       sources: Source[];

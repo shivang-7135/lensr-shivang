@@ -24,6 +24,7 @@ from datetime import UTC, datetime
 
 from langchain_core.messages import HumanMessage, SystemMessage
 
+from ..config import settings
 from ..llm import fast_synthesis_llm, reasoning_llm, router_llm
 from ..observability import get_langchain_session_metadata, span
 from ..tools.scraper import fetch_clean
@@ -346,7 +347,7 @@ async def _reflect(query: str, evidence: list[dict], loop: int) -> dict:
     return await _llm_json(REFLECT_SYS, user, use_router=True)
 
 
-async def _synthesize(query: str, kw: dict, evidence: list[dict], cfg: IntentConfig) -> dict:
+async def _synthesize(query: str, kw: dict, evidence: list[dict], cfg: IntentConfig) -> tuple[dict, str]:
     # Check fast mode context
     _is_fast = False
     try:
@@ -394,8 +395,8 @@ async def _synthesize(query: str, kw: dict, evidence: list[dict], cfg: IntentCon
     context = "\n\n---\n\n".join(context_parts)
 
     # In fast mode: use Haiku for ALL intents (2-3x faster response)
-    # In deep mode: use Sonnet for complex intents, Haiku for simple lookups
-    use_fast_model = _is_fast or cfg.name in {"weather", "news", "sports", "general"}
+    # In deep mode: always use Sonnet/Opus for ALL intents
+    model_used = settings.bedrock_model_router if _is_fast else settings.bedrock_model_reasoning
 
     if _is_fast:
         # ⚡ FAST MODE: Simplified schema for speed — fewer output tokens = faster response
@@ -445,8 +446,8 @@ async def _synthesize(query: str, kw: dict, evidence: list[dict], cfg: IntentCon
     )
 
     # Fast mode: 12s timeout (should complete in 3-5s with Haiku + 1024 tokens)
-    # Deep mode: 25s timeout (Sonnet is slower but more thorough)
-    synth_timeout = 12.0 if _is_fast else 25.0
+    # Deep mode: 45s timeout (Sonnet/Opus is slower but more thorough)
+    synth_timeout = 12.0 if _is_fast else 45.0
 
     with span(
         "llm.synthesize",
@@ -455,7 +456,7 @@ async def _synthesize(query: str, kw: dict, evidence: list[dict], cfg: IntentCon
         attributes={
             "intent": cfg.name,
             "evidence.count": len(limited_evidence),
-            "model": "haiku-fast-synth" if _is_fast else ("haiku" if use_fast_model else "sonnet"),
+            "model": model_used,
             "context.chars": len(context),
             "fast_mode": _is_fast,
         },
@@ -463,11 +464,8 @@ async def _synthesize(query: str, kw: dict, evidence: list[dict], cfg: IntentCon
         if _is_fast:
             # Fast mode: use dedicated fast_synthesis_llm (Haiku + 1024 max_tokens)
             data = await _llm_json(sys, user, use_fast_synth=True, timeout=synth_timeout)
-        elif use_fast_model:
-            # Simple intents in deep mode: use Haiku but with enough tokens
-            data = await _llm_json(sys, user, use_fast_synth=True, timeout=synth_timeout)
         else:
-            # Complex intents in deep mode: use Sonnet for full quality
+            # Deep mode: always use reasoning_llm (Sonnet/Opus) for high quality reasoning
             data = await _llm_json(sys, user, use_router=False, timeout=synth_timeout)
 
     # Fallback: retry with simpler prompt if structured JSON failed
@@ -501,7 +499,7 @@ async def _synthesize(query: str, kw: dict, evidence: list[dict], cfg: IntentCon
             ),
         }
 
-    return data
+    return data, model_used
 
 
 # ---------- orchestrator ----------
@@ -617,7 +615,7 @@ async def run_pipeline(query: str, cfg: IntentConfig) -> AsyncIterator[dict]:
         yield {"type": "stage", "stage": "synthesize"}
 
         # Start synthesis immediately with snippet-only evidence
-        structured = await _synthesize(query, kw, evidence, cfg)
+        structured, model_used = await _synthesize(query, kw, evidence, cfg)
         sources = [{"title": e["title"], "url": e["url"]} for e in evidence]
 
         tldr = structured.get("tldr") or ""
@@ -661,6 +659,7 @@ async def run_pipeline(query: str, cfg: IntentConfig) -> AsyncIterator[dict]:
         yield {
             "type": "final",
             "intent": cfg.name,
+            "model": model_used,
             "structured": structured,
             "markdown": structured.get("detail_markdown") or tldr,
             "sources": sources,
@@ -852,7 +851,7 @@ async def run_pipeline(query: str, cfg: IntentConfig) -> AsyncIterator[dict]:
 
     # Partial answer has been moved to run earlier before scraping
 
-    structured = await _synthesize(query, kw, evidence, cfg)
+    structured, model_used = await _synthesize(query, kw, evidence, cfg)
     sources = [{"title": e.get("title", ""), "url": e.get("url", "")} for e in evidence[:10] if e.get("url")]
 
     # ⚡ Stream structured fields progressively for faster perceived rendering
@@ -892,6 +891,7 @@ async def run_pipeline(query: str, cfg: IntentConfig) -> AsyncIterator[dict]:
     yield {
         "type": "final",
         "intent": cfg.name,
+        "model": model_used,
         "structured": structured,
         "markdown": structured.get("detail_markdown") or tldr,
         "sources": sources,
