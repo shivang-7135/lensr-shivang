@@ -1,42 +1,25 @@
-/**
- * Returns all stored API keys as a flat { NAME: value } map.
- * Authenticated only via the shared secret used by the Python backend.
- * Place under /api/public/* so external callers (the Python service) can reach it.
- */
-import { createFileRoute } from "@tanstack/react-router";
-import { timingSafeEqual } from "node:crypto";
+import { json } from "@tanstack/react-start";
+import { createAPIFileRoute } from "@tanstack/react-start/api";
+import { db } from "@/lib/db.server";
 
-function safeCompare(a: string, b: string): boolean {
-  if (!a || !b) return false;
-  const bufA = Buffer.from(a);
-  const bufB = Buffer.from(b);
-  if (bufA.length !== bufB.length) {
-    // Compare against self to spend constant time, then return false
-    timingSafeEqual(bufA, bufA);
-    return false;
-  }
-  return timingSafeEqual(bufA, bufB);
-}
+export const APIRoute = createAPIFileRoute("/api/public/backend-keys")({
+  GET: async ({ request }) => {
+    const authHeader =
+      request.headers.get("authorization") || request.headers.get("x-backend-secret");
+    const secret = process.env.BACKEND_SHARED_SECRET;
 
-export const Route = createFileRoute("/api/public/backend-keys")({
-  server: {
-    handlers: {
-      GET: async ({ request }) => {
-        const secret = request.headers.get("x-backend-secret") ?? "";
-        const expected = process.env.BACKEND_SHARED_SECRET ?? "";
-        if (!expected || !safeCompare(secret, expected)) {
-          return new Response("Unauthorized", { status: 401 });
-        }
-        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-        const { data, error } = await supabaseAdmin.from("api_keys").select("name, value");
-        if (error) {
-          // Don't leak database error details
-          return new Response("Internal error", { status: 500 });
-        }
-        const map: Record<string, string> = {};
-        for (const row of data ?? []) map[row.name] = row.value ?? "";
-        return Response.json(map, { headers: { "Cache-Control": "no-store" } });
-      },
-    },
+    if (!secret || authHeader !== secret) {
+      return new Response("Unauthorized", { status: 401 });
+    }
+
+    try {
+      const { rows } = await db.query("SELECT name, value FROM public.api_keys");
+      const map: Record<string, string> = {};
+      for (const row of rows) map[row.name] = row.value || "";
+      return json(map, { headers: { "Cache-Control": "no-store" } });
+    } catch (e) {
+      console.error("Error fetching keys:", e);
+      return new Response("Internal Server Error", { status: 500 });
+    }
   },
 });

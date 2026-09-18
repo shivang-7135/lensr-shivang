@@ -18,7 +18,7 @@ import { Route as ApiSearchRouteImport } from './routes/api/search'
 import { Route as ApiCacheClearRouteImport } from './routes/api/cache-clear'
 import { Route as AuthenticatedSavedRouteImport } from './routes/_authenticated/saved'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
-import { Route as ApiPublicBackendKeysRouteImport } from './routes/api/public/backend-keys'
+import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 
 const ResultsRoute = ResultsRouteImport.update({
   id: '/results',
@@ -64,9 +64,9 @@ const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const ApiPublicBackendKeysRoute = ApiPublicBackendKeysRouteImport.update({
-  id: '/api/public/backend-keys',
-  path: '/api/public/backend-keys',
+const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
+  id: '/api/auth/$',
+  path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -79,7 +79,7 @@ export interface FileRoutesByFullPath {
   '/saved': typeof AuthenticatedSavedRoute
   '/api/cache-clear': typeof ApiCacheClearRoute
   '/api/search': typeof ApiSearchRoute
-  '/api/public/backend-keys': typeof ApiPublicBackendKeysRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -90,7 +90,7 @@ export interface FileRoutesByTo {
   '/saved': typeof AuthenticatedSavedRoute
   '/api/cache-clear': typeof ApiCacheClearRoute
   '/api/search': typeof ApiSearchRoute
-  '/api/public/backend-keys': typeof ApiPublicBackendKeysRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -103,7 +103,7 @@ export interface FileRoutesById {
   '/_authenticated/saved': typeof AuthenticatedSavedRoute
   '/api/cache-clear': typeof ApiCacheClearRoute
   '/api/search': typeof ApiSearchRoute
-  '/api/public/backend-keys': typeof ApiPublicBackendKeysRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -116,7 +116,7 @@ export interface FileRouteTypes {
     | '/saved'
     | '/api/cache-clear'
     | '/api/search'
-    | '/api/public/backend-keys'
+    | '/api/auth/$'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -127,7 +127,7 @@ export interface FileRouteTypes {
     | '/saved'
     | '/api/cache-clear'
     | '/api/search'
-    | '/api/public/backend-keys'
+    | '/api/auth/$'
   id:
     | '__root__'
     | '/'
@@ -139,7 +139,7 @@ export interface FileRouteTypes {
     | '/_authenticated/saved'
     | '/api/cache-clear'
     | '/api/search'
-    | '/api/public/backend-keys'
+    | '/api/auth/$'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -150,7 +150,7 @@ export interface RootRouteChildren {
   ResultsRoute: typeof ResultsRoute
   ApiCacheClearRoute: typeof ApiCacheClearRoute
   ApiSearchRoute: typeof ApiSearchRoute
-  ApiPublicBackendKeysRoute: typeof ApiPublicBackendKeysRoute
+  ApiAuthSplatRoute: typeof ApiAuthSplatRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -218,11 +218,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/api/public/backend-keys': {
-      id: '/api/public/backend-keys'
-      path: '/api/public/backend-keys'
-      fullPath: '/api/public/backend-keys'
-      preLoaderRoute: typeof ApiPublicBackendKeysRouteImport
+    '/api/auth/$': {
+      id: '/api/auth/$'
+      path: '/api/auth/$'
+      fullPath: '/api/auth/$'
+      preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -249,7 +249,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResultsRoute: ResultsRoute,
   ApiCacheClearRoute: ApiCacheClearRoute,
   ApiSearchRoute: ApiSearchRoute,
-  ApiPublicBackendKeysRoute: ApiPublicBackendKeysRoute,
+  ApiAuthSplatRoute: ApiAuthSplatRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

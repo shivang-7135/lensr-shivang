@@ -1,7 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useSession } from "@/lib/auth-client";
 import { SiteHeader } from "@/components/SiteHeader";
+import { getUploadUrl, saveImageRecord } from "@/lib/upload.functions";
 
 export const Route = createFileRoute("/insta")({
   head: () => ({ meta: [{ title: "Insta caption helper — Lensr" }] }),
@@ -13,20 +14,14 @@ const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 
 function InstaPage() {
   const nav = useNavigate();
-  const [authed, setAuthed] = useState<boolean | null>(null);
+  const { data: session, isPending } = useSession();
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    supabase.auth
-      .getSession()
-      .then(({ data }) => setAuthed(!!data.session))
-      .catch(() => setAuthed(false));
-  }, []);
+  const authed = !!session;
 
-  // Clean up object URLs to prevent memory leaks
   useEffect(() => {
     return () => {
       if (preview) URL.revokeObjectURL(preview);
@@ -34,7 +29,6 @@ function InstaPage() {
   }, [preview]);
 
   function pick(f: File) {
-    // Validate file size
     if (f.size > MAX_FILE_SIZE_BYTES) {
       setError(
         `File is too large (${(f.size / 1024 / 1024).toFixed(1)} MB). Max size is ${MAX_FILE_SIZE_MB} MB.`,
@@ -42,7 +36,6 @@ function InstaPage() {
       return;
     }
     setError(null);
-    // Revoke previous preview URL
     if (preview) URL.revokeObjectURL(preview);
     setFile(f);
     setPreview(URL.createObjectURL(f));
@@ -53,42 +46,38 @@ function InstaPage() {
     setUploading(true);
     setError(null);
     try {
-      const { data: sess } = await supabase.auth.getSession();
-      const uid = sess.session?.user.id;
-      if (!uid) {
+      if (!authed) {
         setError("Please sign in.");
         setUploading(false);
         return;
       }
-      const path = `${uid}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.\-_]/g, "_")}`;
-      const { error: upErr } = await supabase.storage.from("insta-images").upload(path, file);
-      if (upErr) {
-        setError(upErr.message);
-        setUploading(false);
-        return;
+
+      // 1. Get SAS write URL
+      const { storagePath, writeUrl } = await getUploadUrl({ data: { fileName: file.name } });
+
+      // 2. Upload file directly to Azure Blob Storage
+      const res = await fetch(writeUrl, {
+        method: "PUT",
+        headers: {
+          "x-ms-blob-type": "BlockBlob",
+          "Content-Type": file.type,
+        },
+        body: file,
+      });
+
+      if (!res.ok) {
+        throw new Error(`Upload failed with status ${res.status}`);
       }
-      const { error: insertErr } = await supabase
-        .from("uploaded_images")
-        .insert({ user_id: uid, storage_path: path });
-      if (insertErr) {
-        console.error("Failed to record uploaded image:", insertErr.message);
-        // Non-fatal: continue with caption generation
-      }
-      const { data: signed } = await supabase.storage
-        .from("insta-images")
-        .createSignedUrl(path, 3600);
-      if (!signed?.signedUrl) {
-        setError("Failed to generate image URL. Please try again.");
-        setUploading(false);
-        return;
-      }
+
+      // 3. Save DB record and get read URL
+      const { url: readUrl } = await saveImageRecord({ data: { storagePath } });
+
       setUploading(false);
-      // Pass the image URL as a separate param (avoids URL-encoding issues in query string)
       nav({
         to: "/results",
         search: {
           q: "caption + place ideas for my photo",
-          image_url: signed.signedUrl,
+          image_url: readUrl,
         },
       });
     } catch (e) {
@@ -106,7 +95,7 @@ function InstaPage() {
           Drop a photo, get caption styles and nearby spot ideas.
         </p>
 
-        {authed === false && (
+        {!isPending && !authed && (
           <div className="border border-border bg-card rounded-lg p-4 mb-6 text-sm">
             Sign in first to upload photos.{" "}
             <a href="/auth" className="underline">

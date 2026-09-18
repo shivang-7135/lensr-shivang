@@ -1,77 +1,59 @@
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { getRequestHeaders } from "@tanstack/react-start/server";
+import { auth } from "@/lib/auth";
+import { db } from "@/lib/db.server";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function assertAdmin(supabase: any, userId: string) {
-  const { data, error } = await supabase
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", userId)
-    .eq("role", "admin")
-    .maybeSingle();
-  if (error) throw new Error(error.message);
-  if (!data) throw new Error("Forbidden: admin role required");
+async function requireAdmin() {
+  const headers = getRequestHeaders();
+  const session = await auth.api.getSession({ headers });
+  if (!session?.user) throw new Error("Unauthorized");
+
+  const { rows } = await db.query(
+    "SELECT role FROM public.user_roles WHERE user_id = $1 AND role = 'admin'",
+    [session.user.id],
+  );
+  if (rows.length === 0) throw new Error("Forbidden: Admins only");
+  return session.user.id;
 }
 
-export const listApiKeys = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    await assertAdmin(context.supabase, context.userId);
-    const { data, error } = await context.supabase
-      .from("api_keys")
-      .select("name, value, description, updated_at")
-      .order("name");
-    if (error) throw new Error(error.message);
-    return { keys: data ?? [] };
-  });
+export const listApiKeys = createServerFn({ method: "GET" }).handler(async () => {
+  await requireAdmin();
+  const { rows } = await db.query(
+    "SELECT name, value, description, updated_at FROM public.api_keys ORDER BY name",
+  );
+  return rows;
+});
 
 export const upsertApiKey = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input: { name: string; value: string; description?: string }) => {
-    if (!input?.name || typeof input.name !== "string") throw new Error("name required");
-    if (input.name.length > 256 || !/^[A-Z0-9_]+$/.test(input.name))
-      throw new Error("name must be UPPER_SNAKE_CASE");
-    if (typeof input.value !== "string" || input.value.length > 8192)
-      throw new Error("value too long");
-    return input;
-  })
-  .handler(async ({ context, data }) => {
-    await assertAdmin(context.supabase, context.userId);
-    const { error } = await context.supabase.from("api_keys").upsert(
-      {
-        name: data.name,
-        value: data.value,
-        description: data.description ?? null,
-        updated_at: new Date().toISOString(),
-        updated_by: context.userId,
-      },
-      { onConflict: "name" },
+  .validator((data: { name: string; value: string; description?: string }) => data)
+  .handler(async ({ data }) => {
+    const userId = await requireAdmin();
+    await db.query(
+      `INSERT INTO public.api_keys (name, value, description, updated_by, updated_at) 
+       VALUES ($1, $2, $3, $4, now()) 
+       ON CONFLICT (name) DO UPDATE SET 
+       value = EXCLUDED.value, description = EXCLUDED.description, updated_by = EXCLUDED.updated_by, updated_at = now()`,
+      [data.name, data.value, data.description || null, userId],
     );
-    if (error) throw new Error(error.message);
-    return { ok: true };
+    return { success: true };
   });
 
 export const deleteApiKey = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input: { name: string }) => {
-    if (!input?.name) throw new Error("name required");
-    return input;
-  })
-  .handler(async ({ context, data }) => {
-    await assertAdmin(context.supabase, context.userId);
-    const { error } = await context.supabase.from("api_keys").delete().eq("name", data.name);
-    if (error) throw new Error(error.message);
-    return { ok: true };
+  .validator((data: { name: string }) => data)
+  .handler(async ({ data }) => {
+    await requireAdmin();
+    await db.query("DELETE FROM public.api_keys WHERE name = $1", [data.name]);
+    return { success: true };
   });
 
-export const checkIsAdmin = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    const { data } = await context.supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", context.userId)
-      .eq("role", "admin")
-      .maybeSingle();
-    return { isAdmin: !!data };
-  });
+export const checkIsAdmin = createServerFn({ method: "GET" }).handler(async () => {
+  const headers = getRequestHeaders();
+  const session = await auth.api.getSession({ headers });
+  if (!session?.user) return false;
+
+  const { rows } = await db.query(
+    "SELECT role FROM public.user_roles WHERE user_id = $1 AND role = 'admin'",
+    [session.user.id],
+  );
+  return rows.length > 0;
+});

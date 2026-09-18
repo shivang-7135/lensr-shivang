@@ -27,9 +27,6 @@ jobs:
         run: npx tsc --noEmit
       - name: Build frontend
         run: NITRO_PRESET=node-server npm run build
-        env:
-          VITE_SUPABASE_URL: "https://placeholder.supabase.co"
-          VITE_SUPABASE_ANON_KEY: "placeholder-key-for-build"
 
       - name: Setup Python
         uses: actions/setup-python@v5

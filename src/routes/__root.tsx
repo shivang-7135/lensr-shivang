@@ -114,20 +114,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   errorComponent: ErrorComponent,
 });
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const globalProcess = (globalThis as any).process;
-
-const envScript = `window.ENV = ${JSON.stringify({
-  VITE_SUPABASE_URL: globalProcess?.env?.VITE_SUPABASE_URL,
-  VITE_SUPABASE_ANON_KEY: globalProcess?.env?.VITE_SUPABASE_ANON_KEY,
-})};`;
-
 function RootShell({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeBootstrapScript }} />
-        {envScript && <script dangerouslySetInnerHTML={{ __html: envScript }} />}
         <script
           defer
           src="https://cloud.umami.is/script.js"
