@@ -12,16 +12,20 @@ function createSupabaseClient() {
   // Use import.meta.env for client-side (Vite build-time replacement)
   // Fall back to process.env for SSR (server-side rendering)
   const isNode = typeof process !== "undefined";
-  const SUPABASE_URL = 
+  const SUPABASE_URL =
     (typeof window !== "undefined" ? window.ENV?.VITE_SUPABASE_URL : undefined) ||
-    import.meta.env.VITE_SUPABASE_URL || 
+    import.meta.env.VITE_SUPABASE_URL ||
     (isNode ? process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL : undefined);
-    
+
   const SUPABASE_KEY =
     (typeof window !== "undefined" ? window.ENV?.VITE_SUPABASE_ANON_KEY : undefined) ||
     import.meta.env.VITE_SUPABASE_ANON_KEY ||
     import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
-    (isNode ? process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_PUBLISHABLE_KEY : undefined);
+    (isNode
+      ? process.env.VITE_SUPABASE_ANON_KEY ||
+        process.env.SUPABASE_ANON_KEY ||
+        process.env.SUPABASE_PUBLISHABLE_KEY
+      : undefined);
 
   if (!SUPABASE_URL || !SUPABASE_KEY) {
     const missing = [
