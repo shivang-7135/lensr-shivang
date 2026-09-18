@@ -36,7 +36,7 @@ function AuthPage() {
           });
     const { error } = await fn;
     setLoading(false);
-    if (error) setError(error.message);
+    if (error) setError(error.message || "An error occurred");
     else nav({ to: "/" });
   }
 

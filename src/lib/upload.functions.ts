@@ -5,7 +5,7 @@ import { db } from "@/lib/db.server";
 import { generateSignedUrl } from "@/lib/storage.server";
 
 export const getUploadUrl = createServerFn({ method: "POST" })
-  .validator((data: { fileName: string }) => data)
+  .inputValidator((data: { fileName: string }) => data)
   .handler(async ({ data }) => {
     const headers = getRequestHeaders();
     const session = await auth.api.getSession({ headers });
@@ -14,9 +14,6 @@ export const getUploadUrl = createServerFn({ method: "POST" })
     const sanitized = data.fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
     const storagePath = `${session.user.id}/${Date.now()}-${sanitized}`;
 
-    // Generate a write SAS token valid for 15 mins.
-    // We can use generateSignedUrl, but we need to modify it to allow specifying permissions.
-    // Let's just create a quick SAS string here or modify storage.server.ts.
     const writeUrl = await import("@/lib/storage.server").then((m) =>
       m.generateWriteUrl(storagePath, 15),
     );
@@ -24,7 +21,7 @@ export const getUploadUrl = createServerFn({ method: "POST" })
   });
 
 export const saveImageRecord = createServerFn({ method: "POST" })
-  .validator((data: { storagePath: string }) => data)
+  .inputValidator((data: { storagePath: string }) => data)
   .handler(async ({ data }) => {
     const headers = getRequestHeaders();
     const session = await auth.api.getSession({ headers });

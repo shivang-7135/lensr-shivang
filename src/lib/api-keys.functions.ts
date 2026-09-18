@@ -21,11 +21,11 @@ export const listApiKeys = createServerFn({ method: "GET" }).handler(async () =>
   const { rows } = await db.query(
     "SELECT name, value, description, updated_at FROM public.api_keys ORDER BY name",
   );
-  return rows;
+  return { keys: rows };
 });
 
 export const upsertApiKey = createServerFn({ method: "POST" })
-  .validator((data: { name: string; value: string; description?: string }) => data)
+  .inputValidator((data: { name: string; value: string; description?: string }) => data)
   .handler(async ({ data }) => {
     const userId = await requireAdmin();
     await db.query(
@@ -39,7 +39,7 @@ export const upsertApiKey = createServerFn({ method: "POST" })
   });
 
 export const deleteApiKey = createServerFn({ method: "POST" })
-  .validator((data: { name: string }) => data)
+  .inputValidator((data: { name: string }) => data)
   .handler(async ({ data }) => {
     await requireAdmin();
     await db.query("DELETE FROM public.api_keys WHERE name = $1", [data.name]);
@@ -49,11 +49,11 @@ export const deleteApiKey = createServerFn({ method: "POST" })
 export const checkIsAdmin = createServerFn({ method: "GET" }).handler(async () => {
   const headers = getRequestHeaders();
   const session = await auth.api.getSession({ headers });
-  if (!session?.user) return false;
+  if (!session?.user) return { isAdmin: false };
 
   const { rows } = await db.query(
     "SELECT role FROM public.user_roles WHERE user_id = $1 AND role = 'admin'",
     [session.user.id],
   );
-  return rows.length > 0;
+  return { isAdmin: rows.length > 0 };
 });
