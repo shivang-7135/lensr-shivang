@@ -261,6 +261,7 @@ async def run_stream(
         yield {
             "type": "final",
             "intent": intent,
+            "model": "Instant Cache",
             "structured": cached["structured"],
             "markdown": cached["markdown"] or tldr,
             "sources": cached["sources"],
