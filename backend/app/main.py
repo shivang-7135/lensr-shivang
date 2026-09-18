@@ -26,10 +26,10 @@ async def lifespan(_app: FastAPI):
     # Initialise Phoenix tracing once at startup
     setup_tracing()
 
-    # Pre-warm LLM connections to eliminate cold-start latency on first request
+    # Pre-warm LLM connections in background so the server accepts requests immediately
     from .llm import warmup as llm_warmup
 
-    await llm_warmup()
+    asyncio.create_task(llm_warmup())
 
     yield
 
