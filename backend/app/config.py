@@ -10,10 +10,10 @@ logger = logging.getLogger(__name__)
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
-    aws_region: str = "eu-west-1"
-    bedrock_model_reasoning: str = "eu.anthropic.claude-3-5-sonnet-20240620-v1:0"
-    bedrock_model_router: str = "eu.anthropic.claude-3-haiku-20240307-v1:0"
-    bedrock_model_vision: str = "eu.anthropic.claude-3-5-sonnet-20240620-v1:0"
+    aws_region: str
+    bedrock_model_reasoning: str
+    bedrock_model_router: str
+    bedrock_model_vision: str
 
     serper_api_key: str | None = None
     tavily_api_key: str | None = None

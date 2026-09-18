@@ -36,7 +36,7 @@ def reasoning_llm() -> ChatBedrockConverse:
             model=settings.bedrock_model_reasoning,
             region_name=settings.aws_region,
             temperature=0.3,
-            max_tokens=2048,
+            max_tokens=4096,
             config=Config(
                 read_timeout=_REQUEST_TIMEOUT,
                 retries={"max_attempts": _MAX_RETRIES},

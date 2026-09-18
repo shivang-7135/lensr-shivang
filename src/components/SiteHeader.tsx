@@ -37,6 +37,12 @@ export function SiteHeader() {
 
         <nav className="flex items-center gap-1 text-sm">
           <Link
+            to="/app-info"
+            className="px-3 py-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+          >
+            App Info
+          </Link>
+          <Link
             to="/saved"
             className="px-3 py-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
           >
