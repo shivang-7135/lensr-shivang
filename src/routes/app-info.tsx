@@ -48,7 +48,11 @@ const TOC = [
   { id: "11-cicd-pipeline", label: "CI/CD", icon: GitBranch },
   { id: "12-database-schema", label: "Database", icon: Database },
   { id: "13-project-structure", label: "Project Structure", icon: FileCode },
-  { id: "14-why-this-architecture-is-production-grade", label: "Why It's Production-Grade", icon: Award },
+  {
+    id: "14-why-this-architecture-is-production-grade",
+    label: "Why It's Production-Grade",
+    icon: Award,
+  },
 ];
 
 /* ─── Markdown component overrides ───────────────────────────────────── */
@@ -89,12 +93,18 @@ const mdComponents = {
     </p>
   ),
   ul: ({ children, ...props }: React.ComponentPropsWithoutRef<"ul">) => (
-    <ul className="list-disc list-inside text-sm text-muted-foreground mb-4 space-y-1 pl-2" {...props}>
+    <ul
+      className="list-disc list-inside text-sm text-muted-foreground mb-4 space-y-1 pl-2"
+      {...props}
+    >
       {children}
     </ul>
   ),
   ol: ({ children, ...props }: React.ComponentPropsWithoutRef<"ol">) => (
-    <ol className="list-decimal list-inside text-sm text-muted-foreground mb-4 space-y-1 pl-2" {...props}>
+    <ol
+      className="list-decimal list-inside text-sm text-muted-foreground mb-4 space-y-1 pl-2"
+      {...props}
+    >
       {children}
     </ol>
   ),
@@ -133,7 +143,10 @@ const mdComponents = {
       );
     }
     return (
-      <code className="bg-secondary px-1.5 py-0.5 rounded text-xs font-mono text-foreground" {...props}>
+      <code
+        className="bg-secondary px-1.5 py-0.5 rounded text-xs font-mono text-foreground"
+        {...props}
+      >
         {children}
       </code>
     );
@@ -156,7 +169,10 @@ const mdComponents = {
     </thead>
   ),
   th: ({ children, ...props }: React.ComponentPropsWithoutRef<"th">) => (
-    <th className="px-3 py-2 text-left text-xs font-semibold text-foreground border-b border-border" {...props}>
+    <th
+      className="px-3 py-2 text-left text-xs font-semibold text-foreground border-b border-border"
+      {...props}
+    >
       {children}
     </th>
   ),
@@ -213,7 +229,11 @@ function AppInfoPage() {
         {/* Hero */}
         <div className="border-b border-border bg-gradient-to-b from-secondary/30 to-background">
           <div className="mx-auto max-w-6xl px-6 py-12 sm:py-16">
-            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+            >
               <p className="text-xs font-medium text-accent uppercase tracking-widest mb-3">
                 System Documentation
               </p>
@@ -222,8 +242,8 @@ function AppInfoPage() {
                 System Design
               </h1>
               <p className="text-base sm:text-lg text-muted-foreground max-w-2xl leading-relaxed">
-                A comprehensive guide to Lensr's production infrastructure — from Azure Container Apps
-                and AWS Bedrock to semantic caching and multi-agent orchestration.
+                A comprehensive guide to Lensr's production infrastructure — from Azure Container
+                Apps and AWS Bedrock to semantic caching and multi-agent orchestration.
               </p>
             </motion.div>
           </div>
