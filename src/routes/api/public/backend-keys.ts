@@ -13,14 +13,14 @@ function safeCompare(a: string, b: string): boolean {
   return timingSafeEqual(bufA, bufB);
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const Route = createFileRoute("/api/public/backend-keys" as any)({
+export const Route = createFileRoute("/api/public/backend-keys")({
   server: {
     handlers: {
       GET: async ({ request }) => {
-        const authHeader = request.headers.get("authorization") || request.headers.get("x-backend-secret") || "";
+        const authHeader =
+          request.headers.get("authorization") || request.headers.get("x-backend-secret") || "";
         const expected = process.env.BACKEND_SHARED_SECRET || "";
-        
+
         if (!expected || !safeCompare(authHeader, expected)) {
           return new Response("Unauthorized", { status: 401 });
         }
