@@ -21,6 +21,10 @@ param corsAllowOrigin string = 'https://lensr.studio,https://www.lensr.studio'
 @secure()
 param githubToken string
 
+@description('Database connection string')
+@secure()
+param databaseUrl string
+
 @description('GitHub username for GHCR')
 param githubUsername string = 'shivang-7135'
 
@@ -85,6 +89,9 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-02-01' = {
 resource backendApp 'Microsoft.App/containerApps@2023-05-01' = {
   name: backendAppName
   location: location
+  identity: {
+    type: 'SystemAssigned'
+  }
   properties: {
     managedEnvironmentId: containerAppEnv.id
     configuration: {
@@ -118,6 +125,10 @@ resource backendApp 'Microsoft.App/containerApps@2023-05-01' = {
             name: 'BACKEND_SHARED_SECRET'
             value: backendSharedSecret
           }
+          {
+            name: 'AZURE_KEYVAULT_URL'
+            value: keyVault.properties.vaultUri
+          }
         ]
       }]
       scale: { minReplicas: 1, maxReplicas: 3 }
@@ -125,15 +136,24 @@ resource backendApp 'Microsoft.App/containerApps@2023-05-01' = {
   }
 }
 
+var betterAuthSecret = 'lensr_auth_${uniqueString(resourceGroup().id)}'
+
 // 6. Frontend Container App
 resource frontendApp 'Microsoft.App/containerApps@2023-05-01' = {
   name: frontendAppName
   location: location
+  identity: {
+    type: 'SystemAssigned'
+  }
   properties: {
     managedEnvironmentId: containerAppEnv.id
     configuration: {
       secrets: [
         { name: 'ghcr-password', value: githubToken }
+        {
+          name: 'database-url'
+          value: databaseUrl
+        }
       ]
       registries: [
         {
@@ -162,6 +182,26 @@ resource frontendApp 'Microsoft.App/containerApps@2023-05-01' = {
             name: 'BACKEND_SHARED_SECRET'
             value: backendSharedSecret
           }
+          {
+            name: 'VITE_SUPABASE_URL'
+            value: 'https://ovadmzrtaawhqvtxbwde.supabase.co'
+          }
+          {
+            name: 'VITE_SUPABASE_ANON_KEY'
+            value: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im92YWRtenJ0YWF3aHF2dHhid2RlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzNjg3NjAsImV4cCI6MjA5Njk0NDc2MH0.pTDaoYRoiLUdWSY8cJcyzE4immN5uY8XL3QOpKQ8Al0'
+          }
+          {
+            name: 'DATABASE_URL'
+            secretRef: 'database-url'
+          }
+          {
+            name: 'BETTER_AUTH_SECRET'
+            value: betterAuthSecret
+          }
+          {
+            name: 'BETTER_AUTH_URL'
+            value: 'https://${frontendAppName}.${containerAppEnv.properties.defaultDomain}'
+          }
         ]
       }]
       scale: { minReplicas: 1, maxReplicas: 3 }
@@ -169,5 +209,44 @@ resource frontendApp 'Microsoft.App/containerApps@2023-05-01' = {
   }
 }
 
-
-
+// 7. Key Vault Access Policy
+resource keyVaultAccessPolicy 'Microsoft.KeyVault/vaults/accessPolicies@2023-02-01' = {
+  parent: keyVault
+  name: 'add'
+  properties: {
+    accessPolicies: [
+      {
+        tenantId: subscription().tenantId
+        objectId: backendApp.identity.principalId
+        permissions: {
+          secrets: [
+            'get'
+            'list'
+          ]
+        }
+      }
+      {
+        tenantId: subscription().tenantId
+        objectId: frontendApp.identity.principalId
+        permissions: {
+          secrets: [
+            'get'
+            'list'
+          ]
+        }
+      }
+      {
+        tenantId: subscription().tenantId
+        objectId: 'da5c19fd-d2e7-4dc3-b915-17ebe3960f16'
+        permissions: {
+          secrets: [
+            'get'
+            'list'
+            'set'
+            'delete'
+          ]
+        }
+      }
+    ]
+  }
+}

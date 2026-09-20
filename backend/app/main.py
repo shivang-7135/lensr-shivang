@@ -85,6 +85,20 @@ async def healthz():
     return {"ok": True}
 
 
+@app.get("/debug")
+async def debug():
+    try:
+        from azure.identity import DefaultAzureCredential
+        from azure.keyvault.secrets import SecretClient
+
+        cred = DefaultAzureCredential()
+        client = SecretClient(vault_url=settings.azure_keyvault_url, credential=cred)
+        region = client.get_secret("AWS-REGION").value
+        return {"aws_region": settings.aws_region, "fetched_region": region}
+    except Exception as e:
+        return {"error": str(e), "type": str(type(e))}
+
+
 @app.post("/search")
 async def search(body: SearchBody, x_backend_secret: str | None = Header(default=None)):
     _check_secret(x_backend_secret)
