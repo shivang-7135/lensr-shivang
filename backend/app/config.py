@@ -39,10 +39,11 @@ settings = Settings()
 
 if settings.azure_keyvault_url:
     try:
+        import os
+        import time
+
         from azure.identity import DefaultAzureCredential
         from azure.keyvault.secrets import SecretClient
-        import time
-        import os
 
         # Retry loop for Managed Identity token endpoint
         client = None
@@ -53,10 +54,10 @@ if settings.azure_keyvault_url:
                 # Test the connection to ensure the token endpoint is ready
                 client.get_secret("SERPER-API-KEY")
                 break
-            except Exception as e:
-                logger.warning(f"Key Vault connection attempt {attempt+1} failed, retrying in 2s...")
+            except Exception:
+                logger.warning(f"Key Vault connection attempt {attempt + 1} failed, retrying in 2s...")
                 time.sleep(2)
-        
+
         if client:
             with contextlib.suppress(Exception):
                 settings.serper_api_key = client.get_secret("SERPER-API-KEY").value
