@@ -37,62 +37,6 @@ class Settings(BaseSettings):
 
 settings = Settings()
 
-if settings.azure_keyvault_url:
-    try:
-        import os
-        import time
-
-        from azure.identity import DefaultAzureCredential
-        from azure.keyvault.secrets import SecretClient
-
-        # Retry loop for Managed Identity token endpoint
-        client = None
-        for attempt in range(5):
-            try:
-                credential = DefaultAzureCredential()
-                client = SecretClient(vault_url=settings.azure_keyvault_url, credential=credential)
-                # Test the connection to ensure the token endpoint is ready
-                client.get_secret("SERPER-API-KEY")
-                break
-            except Exception:
-                logger.warning(f"Key Vault connection attempt {attempt + 1} failed, retrying in 2s...")
-                time.sleep(2)
-
-        if client:
-            with contextlib.suppress(Exception):
-                settings.serper_api_key = client.get_secret("SERPER-API-KEY").value
-
-            with contextlib.suppress(Exception):
-                settings.backend_shared_secret = client.get_secret("BACKEND-SHARED-SECRET").value
-
-            with contextlib.suppress(Exception):
-                settings.database_url = client.get_secret("DATABASE-URL").value
-
-            # Boto3 expects these in os.environ
-            try:
-                os.environ["AWS_ACCESS_KEY_ID"] = client.get_secret("AWS-ACCESS-KEY-ID").value
-                os.environ["AWS_SECRET_ACCESS_KEY"] = client.get_secret("AWS-SECRET-ACCESS-KEY").value
-                aws_region = client.get_secret("AWS-REGION").value
-                os.environ["AWS_REGION"] = aws_region
-                settings.aws_region = aws_region
-            except Exception as e:
-                logger.error(f"Failed to load AWS secrets: {e}")
-
-            try:
-                settings.bedrock_model_reasoning = client.get_secret("BEDROCK-MODEL-REASONING").value
-                settings.bedrock_model_router = client.get_secret("BEDROCK-MODEL-ROUTER").value
-            except Exception as e:
-                logger.error(f"Failed to load Bedrock secrets: {e}")
-
-            with contextlib.suppress(Exception):
-                os.environ["APPLICATIONINSIGHTS_CONNECTION_STRING"] = client.get_secret(
-                    "APPLICATIONINSIGHTS-CONNECTION-STRING"
-                ).value
-
-            logger.info("Successfully loaded secrets from Azure Key Vault")
-    except Exception as e:
-        logger.warning(f"Failed to load secrets from Azure Key Vault: {e}")
-
 # --- Startup validation ---
 _INSECURE_SECRETS = {"", "change-me", "secret", "password"}
 
