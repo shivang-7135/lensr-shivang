@@ -66,6 +66,8 @@ type Sources = { title: string; url: string }[];
 function formatModelName(raw: string): string {
   if (!raw) return "";
   const lower = raw.toLowerCase();
+  if (lower.includes("sonnet-4-6")) return "Claude 4.6 Sonnet";
+  if (lower.includes("haiku-4-5")) return "Claude 4.5 Haiku";
   if (lower.includes("opus")) return "Claude 3 Opus";
   if (lower.includes("sonnet")) {
     if (lower.includes("v2") || lower.includes("20241022")) return "Claude 3.5 Sonnet v2";
@@ -73,7 +75,7 @@ function formatModelName(raw: string): string {
   }
   if (lower.includes("haiku")) return "Claude 3 Haiku";
   if (lower.includes("cache")) return "Instant Cache";
-  return raw.replace(/^(eu\.|us\.)?anthropic\./, "").split("-")[0] || raw;
+  return raw.replace(/^(eu\.|us\.|global\.)?anthropic\./, "").split("-")[0] || raw;
 }
 
 function hasArr(d: Record<string, unknown> | null, key: string): boolean {
@@ -635,7 +637,7 @@ export function ResultsStream({
                 <Sparkles className="h-3 w-3" />
                 {formatModelName(
                   model ||
-                    (cached ? "Instant Cache" : fastMode ? "Claude 3 Haiku" : "Claude 3.5 Sonnet"),
+                    (cached ? "Instant Cache" : fastMode ? "Claude 4.5 Haiku" : "Claude 4.6 Sonnet"),
                 )}
               </span>
               {!done && !error && !cached && (
