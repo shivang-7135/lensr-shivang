@@ -85,54 +85,26 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-02-01' = {
   }
 }
 
-// 5. Backend Container App
-resource backendApp 'Microsoft.App/containerApps@2023-05-01' = {
-  name: backendAppName
-  location: location
-  identity: {
-    type: 'SystemAssigned'
-  }
-  properties: {
-    managedEnvironmentId: containerAppEnv.id
-    configuration: {
-      secrets: [
-        { name: 'ghcr-password', value: githubToken }
-      ]
-      registries: [
-        {
-          server: 'ghcr.io'
-          username: githubUsername
-          passwordSecretRef: 'ghcr-password'
-        }
-      ]
-      ingress: {
-        external: true
-        targetPort: 8000
-        transport: 'auto'
-      }
-    }
-    template: {
-      containers: [{
-        name: backendAppName
-        image: backendImage
-        resources: { cpu: json('0.25'), memory: '0.5Gi' }
-        env: [
-          {
-            name: 'CORS_ALLOW_ORIGIN'
-            value: 'https://${frontendAppName}.${containerAppEnv.properties.defaultDomain},https://lensr.studio,https://www.lensr.studio'
-          }
-          {
-            name: 'BACKEND_SHARED_SECRET'
-            value: backendSharedSecret
-          }
-          {
-            name: 'AZURE_KEYVAULT_URL'
-            value: keyVault.properties.vaultUri
-          }
-        ]
-      }]
-      scale: { minReplicas: 1, maxReplicas: 3 }
-    }
+// 5. Backend Container App Module
+module backendApp 'backendApp.bicep' = {
+  name: 'backendAppDeployment'
+  params: {
+    location: location
+    backendAppName: backendAppName
+    containerAppEnvId: containerAppEnv.id
+    githubToken: githubToken
+    githubUsername: githubUsername
+    backendImage: backendImage
+    frontendAppName: frontendAppName
+    envDefaultDomain: containerAppEnv.properties.defaultDomain
+    backendSharedSecret: backendSharedSecret
+    serperApiKey: keyVault.getSecret('SERPER-API-KEY')
+    databaseUrl: keyVault.getSecret('DATABASE-URL')
+    awsAccessKeyId: keyVault.getSecret('AWS-ACCESS-KEY-ID')
+    awsSecretAccessKey: keyVault.getSecret('AWS-SECRET-ACCESS-KEY')
+    awsRegion: keyVault.getSecret('AWS-REGION')
+    bedrockModelReasoning: keyVault.getSecret('BEDROCK-MODEL-REASONING')
+    bedrockModelRouter: keyVault.getSecret('BEDROCK-MODEL-ROUTER')
   }
 }
 
@@ -212,16 +184,6 @@ resource keyVaultAccessPolicy 'Microsoft.KeyVault/vaults/accessPolicies@2023-02-
   name: 'add'
   properties: {
     accessPolicies: [
-      {
-        tenantId: subscription().tenantId
-        objectId: backendApp.identity.principalId
-        permissions: {
-          secrets: [
-            'get'
-            'list'
-          ]
-        }
-      }
       {
         tenantId: subscription().tenantId
         objectId: 'da5c19fd-d2e7-4dc3-b915-17ebe3960f16'
