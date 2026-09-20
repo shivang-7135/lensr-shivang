@@ -637,7 +637,11 @@ export function ResultsStream({
                 <Sparkles className="h-3 w-3" />
                 {formatModelName(
                   model ||
-                    (cached ? "Instant Cache" : fastMode ? "Claude 4.5 Haiku" : "Claude 4.6 Sonnet"),
+                    (cached
+                      ? "Instant Cache"
+                      : fastMode
+                        ? "Claude 4.5 Haiku"
+                        : "Claude 4.6 Sonnet"),
                 )}
               </span>
               {!done && !error && !cached && (
