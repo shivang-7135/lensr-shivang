@@ -31,6 +31,7 @@ var keyVaultName = '${environmentName}-kv'
 var containerAppEnvName = '${environmentName}-env'
 var backendAppName = '${environmentName}-backend'
 var frontendAppName = '${environmentName}-frontend'
+var backendSharedSecret = 'lensr_sec_${uniqueString(resourceGroup().id)}'
 
 // 1. Log Analytics Workspace
 resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2022-10-01' = {
@@ -108,6 +109,16 @@ resource backendApp 'Microsoft.App/containerApps@2023-05-01' = {
         name: backendAppName
         image: backendImage
         resources: { cpu: json('0.25'), memory: '0.5Gi' }
+        env: [
+          {
+            name: 'CORS_ALLOW_ORIGIN'
+            value: 'https://${frontendAppName}.${containerAppEnv.properties.defaultDomain},https://lensr.studio,https://www.lensr.studio'
+          }
+          {
+            name: 'BACKEND_SHARED_SECRET'
+            value: backendSharedSecret
+          }
+        ]
       }]
       scale: { minReplicas: 1, maxReplicas: 3 }
     }
@@ -142,6 +153,16 @@ resource frontendApp 'Microsoft.App/containerApps@2023-05-01' = {
         name: frontendAppName
         image: frontendImage
         resources: { cpu: json('0.25'), memory: '0.5Gi' }
+        env: [
+          {
+            name: 'BACKEND_BASE_URL'
+            value: 'https://${backendAppName}.${containerAppEnv.properties.defaultDomain}'
+          }
+          {
+            name: 'BACKEND_SHARED_SECRET'
+            value: backendSharedSecret
+          }
+        ]
       }]
       scale: { minReplicas: 1, maxReplicas: 3 }
     }
