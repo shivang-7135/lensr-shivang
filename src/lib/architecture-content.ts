@@ -1,4 +1,4 @@
-export const architectureMarkdown = `
+export const ARCHITECTURE_MD = `
 # Lensr Architecture
 
 Lensr is a modern, AI-powered search engine built to provide high-quality, structured answers instead of just a list of links. The architecture is designed to be fast, scalable, and modular.
