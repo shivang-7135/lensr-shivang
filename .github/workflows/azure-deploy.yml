@@ -76,10 +76,15 @@ jobs:
 
       - name: Update Backend Container App
         run: |
+          SUFFIX="${{ github.sha }}"
           az containerapp update \
             --name lensrprod-backend \
             --resource-group lensr-sweden-prod \
-            --image ghcr.io/${{ github.repository_owner }}/lensr-backend:${{ github.sha }}
+            --image ghcr.io/${{ github.repository_owner }}/lensr-backend:${{ github.sha }} \
+            --revision-suffix "${SUFFIX:0:8}" \
+            --min-replicas 1 \
+            --max-replicas 3 \
+            --traffic-weight latest=100
 
   deploy-frontend:
     name: Deploy Frontend
@@ -109,8 +114,12 @@ jobs:
 
       - name: Update Frontend Container App
         run: |
+          SUFFIX="${{ github.sha }}"
           az containerapp update \
             --name lensrprod-frontend \
             --resource-group lensr-sweden-prod \
-            --image ghcr.io/${{ github.repository_owner }}/lensr-frontend:${{ github.sha }}
-
+            --image ghcr.io/${{ github.repository_owner }}/lensr-frontend:${{ github.sha }} \
+            --revision-suffix "${SUFFIX:0:8}" \
+            --min-replicas 1 \
+            --max-replicas 3 \
+            --traffic-weight latest=100

@@ -87,34 +87,20 @@ resource backendApp 'Microsoft.App/containerApps@2023-05-01' = {
   properties: {
     managedEnvironmentId: containerAppEnv.id
     configuration: {
-      secrets: [
-        { name: 'ghcr-password', value: githubToken }
-      ]
-      registries: [
-        {
-          server: 'ghcr.io'
-          username: githubUsername
-          passwordSecretRef: 'ghcr-password'
-        }
-      ]
       ingress: {
         external: true
-        targetPort: 8000
+        targetPort: 80
         transport: 'auto'
       }
     }
     template: {
       containers: [{
         name: backendAppName
-        image: backendImage
+        // Placeholder: CI pipeline (azure-deploy.yml) will update this on first push to production
+        image: 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest'
         resources: { cpu: json('0.25'), memory: '0.5Gi' }
-        env: [
-          { name: 'CORS_ALLOW_ORIGIN', value: corsAllowOrigin }
-          { name: 'AZURE_KEYVAULT_URL', value: keyVault.properties.vaultUri }
-        ]
-        probes: [{ type: 'Liveness', httpGet: { port: 8000, path: '/healthz' }, initialDelaySeconds: 15, periodSeconds: 10 }]
       }]
-      scale: { minReplicas: 0, maxReplicas: 2 }
+      scale: { minReplicas: 1, maxReplicas: 3 }
     }
   }
 }
@@ -126,32 +112,20 @@ resource frontendApp 'Microsoft.App/containerApps@2023-05-01' = {
   properties: {
     managedEnvironmentId: containerAppEnv.id
     configuration: {
-      secrets: [
-        { name: 'ghcr-password', value: githubToken }
-      ]
-      registries: [
-        {
-          server: 'ghcr.io'
-          username: githubUsername
-          passwordSecretRef: 'ghcr-password'
-        }
-      ]
       ingress: {
         external: true
-        targetPort: 3000
+        targetPort: 80
         transport: 'auto'
       }
     }
     template: {
       containers: [{
         name: frontendAppName
-        image: frontendImage
+        // Placeholder: CI pipeline (azure-deploy.yml) will update this on first push to production
+        image: 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest'
         resources: { cpu: json('0.25'), memory: '0.5Gi' }
-        env: [
-          { name: 'VITE_API_BASE_URL', value: 'https://${backendApp.properties.configuration.ingress.fqdn}' }
-        ]
       }]
-      scale: { minReplicas: 0, maxReplicas: 2 }
+      scale: { minReplicas: 1, maxReplicas: 3 }
     }
   }
 }
