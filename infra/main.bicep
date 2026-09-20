@@ -99,7 +99,7 @@ resource backendApp 'Microsoft.App/containerApps@2023-05-01' = {
       ]
       ingress: {
         external: true
-        targetPort: 80
+        targetPort: 8000
         transport: 'auto'
       }
     }
@@ -133,7 +133,7 @@ resource frontendApp 'Microsoft.App/containerApps@2023-05-01' = {
       ]
       ingress: {
         external: true
-        targetPort: 80
+        targetPort: 3000
         transport: 'auto'
       }
     }
