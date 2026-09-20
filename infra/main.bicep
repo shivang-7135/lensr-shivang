@@ -101,6 +101,7 @@ module backendApp 'backendApp.bicep' = {
     awsRegion: keyVault.getSecret('AWS-REGION')
     bedrockModelReasoning: keyVault.getSecret('BEDROCK-MODEL-REASONING')
     bedrockModelRouter: keyVault.getSecret('BEDROCK-MODEL-ROUTER')
+    bedrockModelVision: keyVault.getSecret('BEDROCK-MODEL-VISION')
   }
 }
 
