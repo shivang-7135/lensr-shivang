@@ -142,9 +142,6 @@ var betterAuthSecret = 'lensr_auth_${uniqueString(resourceGroup().id)}'
 resource frontendApp 'Microsoft.App/containerApps@2023-05-01' = {
   name: frontendAppName
   location: location
-  identity: {
-    type: 'SystemAssigned'
-  }
   properties: {
     managedEnvironmentId: containerAppEnv.id
     configuration: {
@@ -218,16 +215,6 @@ resource keyVaultAccessPolicy 'Microsoft.KeyVault/vaults/accessPolicies@2023-02-
       {
         tenantId: subscription().tenantId
         objectId: backendApp.identity.principalId
-        permissions: {
-          secrets: [
-            'get'
-            'list'
-          ]
-        }
-      }
-      {
-        tenantId: subscription().tenantId
-        objectId: frontendApp.identity.principalId
         permissions: {
           secrets: [
             'get'
