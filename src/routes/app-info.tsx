@@ -35,24 +35,9 @@ export const Route = createFileRoute("/app-info")({
 /* ─── Table of Contents entries ──────────────────────────────────────── */
 
 const TOC = [
-  { id: "1-system-overview", label: "System Overview", icon: Globe },
-  { id: "2-high-level-architecture", label: "Architecture", icon: Layers },
-  { id: "3-azure-cloud-infrastructure", label: "Azure Infrastructure", icon: Server },
-  { id: "4-tech-stack", label: "Tech Stack", icon: FileCode },
-  { id: "5-request-flow-query--result-card", label: "Request Flow", icon: Zap },
-  { id: "6-multi-agent-system", label: "Agent System", icon: GitBranch },
-  { id: "7-llm-configuration", label: "LLM Config", icon: Database },
-  { id: "8-semantic-caching", label: "Semantic Caching", icon: Database },
-  { id: "9-security--compliance", label: "Security", icon: Shield },
-  { id: "10-observability", label: "Observability", icon: Eye },
-  { id: "11-cicd-pipeline", label: "CI/CD", icon: GitBranch },
-  { id: "12-database-schema", label: "Database", icon: Database },
-  { id: "13-project-structure", label: "Project Structure", icon: FileCode },
-  {
-    id: "14-why-this-architecture-is-production-grade",
-    label: "Why It's Production-Grade",
-    icon: Award,
-  },
+  { id: "end-to-end-flow", label: "End-to-End Flow", icon: Zap },
+  { id: "tools-technologies", label: "Tools & Technologies", icon: Layers },
+  { id: "azure-infrastructure", label: "Azure Infrastructure", icon: Server },
 ];
 
 /* ─── Markdown component overrides ───────────────────────────────────── */
@@ -71,6 +56,7 @@ const mdComponents = {
     const id = text
       .toLowerCase()
       .replace(/[^a-z0-9\s-]/g, "")
+      .trim()
       .replace(/\s+/g, "-");
     return (
       <h2
