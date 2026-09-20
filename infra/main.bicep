@@ -109,72 +109,23 @@ module backendApp 'backendApp.bicep' = {
 }
 
 var betterAuthSecret = 'lensr_auth_${uniqueString(resourceGroup().id)}'
-
-// 6. Frontend Container App
-resource frontendApp 'Microsoft.App/containerApps@2023-05-01' = {
-  name: frontendAppName
-  location: location
-  properties: {
-    managedEnvironmentId: containerAppEnv.id
-    configuration: {
-      secrets: [
-        { name: 'ghcr-password', value: githubToken }
-        {
-          name: 'database-url'
-          value: databaseUrl
-        }
-      ]
-      registries: [
-        {
-          server: 'ghcr.io'
-          username: githubUsername
-          passwordSecretRef: 'ghcr-password'
-        }
-      ]
-      ingress: {
-        external: true
-        targetPort: 3000
-        transport: 'auto'
-      }
-    }
-    template: {
-      containers: [{
-        name: frontendAppName
-        image: frontendImage
-        resources: { cpu: json('0.25'), memory: '0.5Gi' }
-        env: [
-          {
-            name: 'BACKEND_BASE_URL'
-            value: 'https://${backendAppName}.${containerAppEnv.properties.defaultDomain}'
-          }
-          {
-            name: 'BACKEND_SHARED_SECRET'
-            value: backendSharedSecret
-          }
-          {
-            name: 'VITE_SUPABASE_URL'
-            value: 'https://ovadmzrtaawhqvtxbwde.supabase.co'
-          }
-          {
-            name: 'VITE_SUPABASE_ANON_KEY'
-            value: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im92YWRtenJ0YWF3aHF2dHhid2RlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzNjg3NjAsImV4cCI6MjA5Njk0NDc2MH0.pTDaoYRoiLUdWSY8cJcyzE4immN5uY8XL3QOpKQ8Al0'
-          }
-          {
-            name: 'DATABASE_URL'
-            secretRef: 'database-url'
-          }
-          {
-            name: 'BETTER_AUTH_SECRET'
-            value: betterAuthSecret
-          }
-          {
-            name: 'BETTER_AUTH_URL'
-            value: 'https://${frontendAppName}.${containerAppEnv.properties.defaultDomain}'
-          }
-        ]
-      }]
-      scale: { minReplicas: 1, maxReplicas: 3 }
-    }
+// 6. Frontend Container App Module
+module frontendApp 'frontendApp.bicep' = {
+  name: 'frontendAppDeployment'
+  params: {
+    location: location
+    frontendAppName: frontendAppName
+    containerAppEnvId: containerAppEnv.id
+    envDefaultDomain: containerAppEnv.properties.defaultDomain
+    githubToken: githubToken
+    githubUsername: githubUsername
+    frontendImage: frontendImage
+    backendAppName: backendAppName
+    backendSharedSecret: backendSharedSecret
+    betterAuthSecret: betterAuthSecret
+    databaseUrl: databaseUrl
+    googleClientId: keyVault.getSecret('GOOGLE-CLIENT-ID')
+    googleClientSecret: keyVault.getSecret('GOOGLE-CLIENT-SECRET')
   }
 }
 
