@@ -9,10 +9,10 @@ param location string = 'swedencentral'
 param environmentName string = 'lensr'
 
 @description('The container image for the backend')
-param backendImage string = 'ghcr.io/shivangsinha/lensr-backend:latest'
+param backendImage string = 'ghcr.io/shivang-7135/lensr-backend:latest'
 
 @description('The container image for the frontend')
-param frontendImage string = 'ghcr.io/shivangsinha/lensr-frontend:latest'
+param frontendImage string = 'ghcr.io/shivang-7135/lensr-frontend:latest'
 
 @description('The allowed CORS origins')
 param corsAllowOrigin string = 'https://lensr.studio,https://www.lensr.studio'
@@ -106,8 +106,7 @@ resource backendApp 'Microsoft.App/containerApps@2023-05-01' = {
     template: {
       containers: [{
         name: backendAppName
-        // Placeholder: CI pipeline (azure-deploy.yml) will update this on first push to production
-        image: 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest'
+        image: backendImage
         resources: { cpu: json('0.25'), memory: '0.5Gi' }
       }]
       scale: { minReplicas: 1, maxReplicas: 3 }
@@ -141,8 +140,7 @@ resource frontendApp 'Microsoft.App/containerApps@2023-05-01' = {
     template: {
       containers: [{
         name: frontendAppName
-        // Placeholder: CI pipeline (azure-deploy.yml) will update this on first push to production
-        image: 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest'
+        image: frontendImage
         resources: { cpu: json('0.25'), memory: '0.5Gi' }
       }]
       scale: { minReplicas: 1, maxReplicas: 3 }

@@ -9,10 +9,10 @@
       "value": "lensrprod"
     },
     "backendImage": {
-      "value": "ghcr.io/shivangsinha/lensr-backend:latest"
+      "value": "ghcr.io/shivang-7135/lensr-backend:latest"
     },
     "frontendImage": {
-      "value": "ghcr.io/shivangsinha/lensr-frontend:latest"
+      "value": "ghcr.io/shivang-7135/lensr-frontend:latest"
     },
     "corsAllowOrigin": {
       "value": "https://lensr.studio,https://www.lensr.studio"
