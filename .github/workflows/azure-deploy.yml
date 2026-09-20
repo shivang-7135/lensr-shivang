@@ -83,8 +83,7 @@ jobs:
             --image ghcr.io/${{ github.repository_owner }}/lensr-backend:${{ github.sha }} \
             --revision-suffix "${SUFFIX:0:8}" \
             --min-replicas 1 \
-            --max-replicas 3 \
-            --traffic-weight latest=100
+            --max-replicas 3
 
   deploy-frontend:
     name: Deploy Frontend
@@ -121,5 +120,4 @@ jobs:
             --image ghcr.io/${{ github.repository_owner }}/lensr-frontend:${{ github.sha }} \
             --revision-suffix "${SUFFIX:0:8}" \
             --min-replicas 1 \
-            --max-replicas 3 \
-            --traffic-weight latest=100
+            --max-replicas 3
