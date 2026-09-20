@@ -23,6 +23,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 
 from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.runnables import RunnableConfig
 
 from ..config import settings
 from ..llm import fast_synthesis_llm, reasoning_llm, router_llm
@@ -127,7 +128,7 @@ async def _llm_json(
     system = DATE_PREAMBLE.format(today=_today_str()) + "\n\n" + system
     # Pass session metadata so Phoenix groups LLM spans by session
     session_meta = get_langchain_session_metadata()
-    config = {"metadata": session_meta} if session_meta else {}
+    config = RunnableConfig({"metadata": session_meta}) if session_meta else RunnableConfig()
     try:
         msg = await asyncio.wait_for(
             llm.ainvoke([SystemMessage(system), HumanMessage(user)], config=config),
@@ -586,32 +587,32 @@ async def run_pipeline(query: str, cfg: IntentConfig) -> AsyncIterator[dict]:
             seed_results = []
 
         # Merge and deduplicate results
-        evidence: list[dict] = []
-        seen_urls: set[str] = set()
+        fast_evidence: list[dict] = []
+        fast_seen: set[str] = set()
         for r in list(generic_results) + list(seed_results):
             url = r.get("url") or r.get("link")
-            if url and url not in seen_urls:
-                evidence.append({"title": r.get("title", ""), "url": url, "snippet": r.get("snippet", ""), "body": ""})
-                seen_urls.add(url)
-        evidence = evidence[:6]  # cap at 6 for speed
+            if url and url not in fast_seen:
+                fast_evidence.append({"title": r.get("title", ""), "url": url, "snippet": r.get("snippet", ""), "body": ""})
+                fast_seen.add(url)
+        fast_evidence = fast_evidence[:6]  # cap at 6 for speed
 
         yield {
             "type": "search_results",
             "loop": 1,
-            "count": len(evidence),
-            "sample": [{"title": r["title"], "url": r["url"]} for r in evidence],
+            "count": len(fast_evidence),
+            "sample": [{"title": r["title"], "url": r["url"]} for r in fast_evidence],
         }
 
         # ⚡ NO SCRAPING in fast mode — synthesize directly from snippets
         yield {
             "type": "thinking",
-            "message": f"Found {len(evidence)} sources. Synthesizing answer from snippets (skipping full page reads for speed)…",
+            "message": f"Found {len(fast_evidence)} sources. Synthesizing answer from snippets (skipping full page reads for speed)…",
         }
         yield {"type": "stage", "stage": "synthesize"}
 
         # Start synthesis immediately with snippet-only evidence
-        structured, model_used = await _synthesize(query, kw, evidence, cfg)
-        sources = [{"title": e["title"], "url": e["url"]} for e in evidence]
+        structured, model_used = await _synthesize(query, kw, fast_evidence, cfg)
+        sources = [{"title": e["title"], "url": e["url"]} for e in fast_evidence]
 
         tldr = structured.get("tldr") or ""
 
@@ -643,7 +644,7 @@ async def run_pipeline(query: str, cfg: IntentConfig) -> AsyncIterator[dict]:
         enrichment_task = asyncio.create_task(generate_enrichment(query, cfg.name, structured))
 
         if pipeline_span:
-            pipeline_span.set_attribute("evidence.final_count", len(evidence))
+            pipeline_span.set_attribute("evidence.final_count", len(fast_evidence))
             pipeline_span.set_attribute("sources.count", len(sources))
             pipeline_span.set_attribute("output.value", tldr[:500])
             pipeline_span.set_attribute("output.mime_type", "text/plain")
@@ -690,9 +691,11 @@ async def run_pipeline(query: str, cfg: IntentConfig) -> AsyncIterator[dict]:
         kw = {"keywords": [], "entities": [], "constraints": [], "intent_summary": "Fallback to base intent"}
         planned_queries = cfg.seed_queries(query)[:3]
 
+    keywords_list = list(kw.get("keywords") or [])
+    entities_list = list(kw.get("entities") or [])
     yield {
         "type": "thinking",
-        "message": f"Identified key terms: {', '.join((kw.get('keywords', []) + kw.get('entities', []))[:5]) or 'general search'}. Planning diverse queries…",
+        "message": f"Identified key terms: {', '.join((keywords_list + entities_list)[:5]) or 'general search'}. Planning diverse queries…",
     }
     yield {"type": "keywords_extracted", "keywords": kw}
     yield {"type": "search_plan", "queries": planned_queries}
@@ -767,9 +770,9 @@ async def run_pipeline(query: str, cfg: IntentConfig) -> AsyncIterator[dict]:
         yield {"type": "scrape_progress", "count": len(seed_unscraped)}
         scraped = await seed_scrape_task
         by_url = {s["url"]: s for s in scraped}
-        for i, e in enumerate(evidence):
-            if e["url"] in by_url:
-                evidence[i] = by_url[e["url"]]
+        for i, ev in enumerate(evidence):
+            if ev["url"] in by_url:
+                evidence[i] = by_url[ev["url"]]
 
     # Scrape any new extra results if we still need more context
     extra_unscraped = [e for e in evidence if "body" not in e][: max(0, SCRAPE_TOP_N - len(seed_unscraped))]
@@ -777,13 +780,13 @@ async def run_pipeline(query: str, cfg: IntentConfig) -> AsyncIterator[dict]:
         yield {"type": "scrape_progress", "count": len(extra_unscraped)}
         extra_scraped = await _scrape(extra_unscraped, len(extra_unscraped))
         by_url2 = {s["url"]: s for s in extra_scraped}
-        for i, e in enumerate(evidence):
-            if e["url"] in by_url2:
-                evidence[i] = by_url2[e["url"]]
+        for i, ev in enumerate(evidence):
+            if ev["url"] in by_url2:
+                evidence[i] = by_url2[ev["url"]]
 
     # ⚡ Heuristic reflection skip — saves 2-4s for ~70% of queries
     # Only call the reflection LLM when evidence is genuinely insufficient
-    keywords_for_check = kw.get("keywords", []) + kw.get("entities", [])
+    keywords_for_check = list(kw.get("keywords") or []) + list(kw.get("entities") or [])
     evidence_is_rich = _evidence_sufficient(evidence, keywords_for_check, deep=True)
 
     should_reflect = MAX_LOOPS > 1 and (
@@ -834,9 +837,9 @@ async def run_pipeline(query: str, cfg: IntentConfig) -> AsyncIterator[dict]:
                     yield {"type": "scrape_progress", "count": len(new_unscraped)}
                     more_scraped = await _scrape(new_unscraped, len(new_unscraped))
                     by_url2 = {s["url"]: s for s in more_scraped}
-                    for i, e in enumerate(evidence):
-                        if e["url"] in by_url2:
-                            evidence[i] = by_url2[e["url"]]
+                    for i, ev in enumerate(evidence):
+                        if ev["url"] in by_url2:
+                            evidence[i] = by_url2[ev["url"]]
 
     yield {"type": "stage", "stage": "synthesize"}
     yield {

@@ -10,10 +10,10 @@ logger = logging.getLogger(__name__)
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
-    aws_region: str
-    bedrock_model_reasoning: str
-    bedrock_model_router: str
-    bedrock_model_vision: str
+    aws_region: str = ""
+    bedrock_model_reasoning: str = ""
+    bedrock_model_router: str = ""
+    bedrock_model_vision: str = ""
 
     serper_api_key: str | None = None
     tavily_api_key: str | None = None

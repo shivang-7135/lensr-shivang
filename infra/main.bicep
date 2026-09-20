@@ -87,6 +87,16 @@ resource backendApp 'Microsoft.App/containerApps@2023-05-01' = {
   properties: {
     managedEnvironmentId: containerAppEnv.id
     configuration: {
+      secrets: [
+        { name: 'ghcr-password', value: githubToken }
+      ]
+      registries: [
+        {
+          server: 'ghcr.io'
+          username: githubUsername
+          passwordSecretRef: 'ghcr-password'
+        }
+      ]
       ingress: {
         external: true
         targetPort: 80
@@ -112,6 +122,16 @@ resource frontendApp 'Microsoft.App/containerApps@2023-05-01' = {
   properties: {
     managedEnvironmentId: containerAppEnv.id
     configuration: {
+      secrets: [
+        { name: 'ghcr-password', value: githubToken }
+      ]
+      registries: [
+        {
+          server: 'ghcr.io'
+          username: githubUsername
+          passwordSecretRef: 'ghcr-password'
+        }
+      ]
       ingress: {
         external: true
         targetPort: 80

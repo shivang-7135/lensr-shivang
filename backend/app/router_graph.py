@@ -10,13 +10,14 @@ from collections.abc import AsyncIterator
 from typing import Literal
 
 from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.runnables import RunnableConfig
 
 from .llm import router_llm
 from .tools.cache import cache_lookup, cache_store
 from .tools.serper import google_search
 
 # Context variable to hold a background search task across intent boundaries
-generic_search_task_var = contextvars.ContextVar("generic_search_task")
+generic_search_task_var: contextvars.ContextVar[asyncio.Task] = contextvars.ContextVar("generic_search_task")
 fast_mode_var = contextvars.ContextVar("fast_mode", default=False)
 
 logger = logging.getLogger(__name__)
@@ -185,7 +186,7 @@ async def _classify(query: str) -> Intent:
         try:
             # Pass session metadata so LangChain instrumentor propagates session.id
             session_meta = get_langchain_session_metadata()
-            config = {"metadata": session_meta} if session_meta else {}
+            config = RunnableConfig({"metadata": session_meta}) if session_meta else RunnableConfig()
             msg = await asyncio.wait_for(
                 router_llm().ainvoke([SystemMessage(CLASSIFY_SYS), HumanMessage(query)], config=config),
                 timeout=5.0,  # Reduced from 8s — classification should be fast with compact prompt
