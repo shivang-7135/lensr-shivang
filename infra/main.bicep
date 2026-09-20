@@ -21,10 +21,6 @@ param corsAllowOrigin string = 'https://lensr.studio,https://www.lensr.studio'
 @secure()
 param githubToken string
 
-@description('Database connection string')
-@secure()
-param databaseUrl string
-
 @description('GitHub username for GHCR')
 param githubUsername string = 'shivang-7135'
 
@@ -123,7 +119,7 @@ module frontendApp 'frontendApp.bicep' = {
     backendAppName: backendAppName
     backendSharedSecret: backendSharedSecret
     betterAuthSecret: betterAuthSecret
-    databaseUrl: databaseUrl
+    databaseUrl: keyVault.getSecret('DATABASE-URL')
     googleClientId: keyVault.getSecret('GOOGLE-CLIENT-ID')
     googleClientSecret: keyVault.getSecret('GOOGLE-CLIENT-SECRET')
   }
