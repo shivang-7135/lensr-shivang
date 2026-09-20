@@ -592,7 +592,9 @@ async def run_pipeline(query: str, cfg: IntentConfig) -> AsyncIterator[dict]:
         for r in list(generic_results) + list(seed_results):
             url = r.get("url") or r.get("link")
             if url and url not in fast_seen:
-                fast_evidence.append({"title": r.get("title", ""), "url": url, "snippet": r.get("snippet", ""), "body": ""})
+                fast_evidence.append(
+                    {"title": r.get("title", ""), "url": url, "snippet": r.get("snippet", ""), "body": ""}
+                )
                 fast_seen.add(url)
         fast_evidence = fast_evidence[:6]  # cap at 6 for speed
 
