@@ -40,6 +40,14 @@ function AuthPage() {
     else nav({ to: "/" });
   }
 
+  async function google() {
+    setError(null);
+    const { error } = await authClient.signIn.social({
+      provider: "google",
+    });
+    if (error) setError(error.message ?? "Google sign-in failed.");
+  }
+
   return (
     <div className="min-h-screen flex flex-col">
       <SiteHeader />
@@ -51,6 +59,19 @@ function AuthPage() {
           <p className="text-sm text-muted-foreground mb-6">
             Save searches, upload photos for caption help.
           </p>
+
+          <button
+            onClick={google}
+            className="w-full border border-border rounded-md px-4 py-2.5 hover:bg-secondary transition flex items-center justify-center gap-2 mb-4"
+          >
+            <span className="font-medium">Continue with Google</span>
+          </button>
+
+          <div className="flex items-center gap-2 my-4">
+            <div className="h-px flex-1 bg-border" />
+            <span className="text-xs text-muted-foreground uppercase tracking-widest">or</span>
+            <div className="h-px flex-1 bg-border" />
+          </div>
 
           <form onSubmit={submit} className="space-y-3">
             <input
