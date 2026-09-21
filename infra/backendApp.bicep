@@ -24,6 +24,10 @@ param bedrockModelReasoning string
 param bedrockModelRouter string
 @secure()
 param bedrockModelVision string
+@secure()
+param appInsightsConnectionString string
+@secure()
+param phoenixApiKey string
 
 resource backendApp 'Microsoft.App/containerApps@2023-05-01' = {
   name: backendAppName
@@ -41,6 +45,8 @@ resource backendApp 'Microsoft.App/containerApps@2023-05-01' = {
         { name: 'bedrock-model-reasoning', value: bedrockModelReasoning }
         { name: 'bedrock-model-router', value: bedrockModelRouter }
         { name: 'bedrock-model-vision', value: bedrockModelVision }
+        { name: 'appinsights-connection-string', value: appInsightsConnectionString }
+        { name: 'phoenix-api-key', value: phoenixApiKey }
       ]
       registries: [
         {
@@ -100,6 +106,14 @@ resource backendApp 'Microsoft.App/containerApps@2023-05-01' = {
           {
             name: 'BEDROCK_MODEL_VISION'
             secretRef: 'bedrock-model-vision'
+          }
+          {
+            name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
+            secretRef: 'appinsights-connection-string'
+          }
+          {
+            name: 'PHOENIX_API_KEY'
+            secretRef: 'phoenix-api-key'
           }
         ]
       }]

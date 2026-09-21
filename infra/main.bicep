@@ -102,6 +102,8 @@ module backendApp 'backendApp.bicep' = {
     bedrockModelReasoning: keyVault.getSecret('BEDROCK-MODEL-REASONING')
     bedrockModelRouter: keyVault.getSecret('BEDROCK-MODEL-ROUTER')
     bedrockModelVision: keyVault.getSecret('BEDROCK-MODEL-VISION')
+    appInsightsConnectionString: keyVault.getSecret('APPLICATIONINSIGHTS-CONNECTION-STRING')
+    phoenixApiKey: keyVault.getSecret('PHOENIX-API-KEY')
   }
 }
 
